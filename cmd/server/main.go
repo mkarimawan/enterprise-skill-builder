@@ -112,6 +112,37 @@ func main() {
 		}
 
 		switch {
+		case action == "rename" && r.Method == http.MethodPost:
+			var req struct {
+				DisplayName string `json:"displayName"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.DisplayName) == "" {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "displayName is required"})
+				return
+			}
+			cleanDisplay := strings.TrimSpace(req.DisplayName)
+			sess.Blueprint.DisplayName = cleanDisplay
+			slug := strings.ToLower(cleanDisplay)
+			var slugBuilder strings.Builder
+			lastHyphen := false
+			for _, r := range slug {
+				if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+					slugBuilder.WriteRune(r)
+					lastHyphen = false
+				} else if !lastHyphen && slugBuilder.Len() > 0 {
+					slugBuilder.WriteByte('-')
+					lastHyphen = true
+				}
+			}
+			computedSlug := strings.Trim(slugBuilder.String(), "-")
+			if computedSlug == "" {
+				computedSlug = "custom-enterprise-skill"
+			}
+			sess.Blueprint.Name = computedSlug
+			writeJSON(w, http.StatusOK, map[string]any{
+				"session": sess,
+			})
+
 		case action == "interview" && r.Method == http.MethodPost:
 			var req struct {
 				Message  string `json:"message"`
@@ -191,8 +222,8 @@ func main() {
 			id := auth.FromContext(r.Context())
 			var req models.PublishRequest
 			_ = json.NewDecoder(r.Body).Decode(&req)
-			if req.Target == "" {
-				req.Target = "all"
+			if req.Target == "" && len(req.Targets) == 0 {
+				req.Targets = []string{"agent_registry"}
 			}
 			if len(sess.GeneratedFiles) == 0 {
 				files, events, secReport, _ := harness.BuildAndVerify(r.Context(), sess)

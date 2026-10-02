@@ -28,7 +28,7 @@
         <div class="workspace-picker">
           <label for="sessionSelect" class="sr-only">Select skill</label>
           <select id="sessionSelect" class="select-field"></select>
-          <button id="newSessionBtn" class="btn btn-secondary btn-sm" type="button">+ New skill</button>
+          <button id="newSessionBtn" class="btn btn-secondary btn-sm" type="button">New skill</button>
         </div>
       </div>
 
@@ -43,7 +43,7 @@
 
     <!-- Pantheon Body: Left Section Nav + Central Page -->
     <div class="pantheon-body">
-      <!-- Left-Hand Section Navigation (Unnumbered, Sentence Case) -->
+      <!-- Left-Hand Section Navigation (Unnumbered, Sentence Case, Progressively Gated) -->
       <aside class="cfc-section-nav" aria-label="Section navigation">
         <nav class="nav-list">
           <button id="stageTabInterview" class="cfc-nav-item active" data-stage="interview" type="button">
@@ -51,7 +51,8 @@
               <path d="M12 20h9"></path>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
             </svg>
-            <span>Create skill</span>
+            <span class="nav-item-label">Create skill</span>
+            <span id="navStateInterview" class="nav-step-state">Draft</span>
           </button>
 
           <button id="stageTabGrounding" class="cfc-nav-item" data-stage="grounding" type="button">
@@ -60,37 +61,41 @@
               <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
               <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
             </svg>
-            <span>Data sources</span>
+            <span class="nav-item-label">Data sources</span>
+            <span id="navStateGrounding" class="nav-step-state">Optional</span>
           </button>
 
-          <button id="stageTabSandbox" class="cfc-nav-item" data-stage="sandbox" type="button">
+          <button id="stageTabSandbox" class="cfc-nav-item" data-stage="sandbox" type="button" disabled title="Describe your skill first to unlock the sandbox test">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="4 17 10 11 4 5"></polyline>
               <line x1="12" y1="19" x2="20" y2="19"></line>
             </svg>
-            <span>Sandbox test</span>
+            <span class="nav-item-label">Sandbox test</span>
+            <span id="navStateSandbox" class="nav-step-state">Locked</span>
           </button>
 
-          <button id="stageTabEval" class="cfc-nav-item" data-stage="eval" type="button">
+          <button id="stageTabEval" class="cfc-nav-item" data-stage="eval" type="button" disabled title="Complete the sandbox test first to unlock evaluations">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 11l3 3L22 4"></path>
               <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
             </svg>
-            <span>Evaluations</span>
+            <span class="nav-item-label">Evaluations</span>
+            <span id="navStateEval" class="nav-step-state">Locked</span>
           </button>
 
-          <button id="stageTabPublish" class="cfc-nav-item" data-stage="publish" type="button">
+          <button id="stageTabPublish" class="cfc-nav-item" data-stage="publish" type="button" disabled title="Complete evaluations first to unlock publishing">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
-            <span>Publish</span>
+            <span class="nav-item-label">Publish</span>
+            <span id="navStatePublish" class="nav-step-state">Locked</span>
           </button>
         </nav>
 
         <div class="nav-footer">
-          <a id="navDownloadZipLink" class="btn btn-secondary btn-sm" style="width: 100%;" href="#" download>Download .zip bundle</a>
+          <a id="navDownloadZipLink" class="btn btn-secondary btn-sm" style="width: 100%;" href="#" download>Download .zip archive</a>
         </div>
       </aside>
 
@@ -100,7 +105,8 @@
         <div class="cfc-action-bar">
           <h2 id="activePageHeading" class="action-bar-title">Create skill</h2>
           <div id="actionBarButtons" class="action-bar-controls">
-            <button id="quickBuildSandboxBtn" class="btn btn-primary btn-sm" type="button">Test in sandbox</button>
+            <span id="workflowStepStatus" class="status-badge status-neutral">Describe your skill to begin</span>
+            <button id="topBarPublishBtn" class="btn btn-primary btn-sm" type="button" disabled title="Complete sandbox test and evaluations to unlock publishing">Publish skill</button>
           </div>
         </div>
 
@@ -110,6 +116,9 @@
             <div class="split-create">
               <!-- Left: Simple Conversation + Input Box + Mic -->
               <div class="cfc-panel">
+                <div class="panel-header">
+                  <h3 class="panel-title">Describe what your skill should do</h3>
+                </div>
                 <div id="chatTranscript" class="conversation-list" aria-live="polite"></div>
 
                 <div class="prompt-composer">
@@ -139,62 +148,128 @@
                 </div>
               </div>
 
-              <!-- Right: Progressive Skill Blueprint -->
+              <!-- Right: Editable Skill Name + Live Skill Summary -->
               <div class="cfc-panel">
                 <div class="panel-header">
-                  <h3 class="panel-title">Skill blueprint</h3>
+                  <h3 class="panel-title">Skill summary</h3>
                   <span id="bpReadinessBadge" class="status-badge status-neutral tabular-nums">Draft</span>
+                </div>
+                <div class="panel-subtitle">
+                  As you describe your goal on the left, this summary automatically captures what the skill does, when Gemini should use it, the inputs it needs, and its safety rules.
+                </div>
+
+                <!-- Editable Skill Name Bar -->
+                <div class="skill-name-bar">
+                  <label class="field-label" for="skillNameInput">Skill name</label>
+                  <div class="skill-name-controls">
+                    <input id="skillNameInput" class="input-field" type="text" placeholder="e.g., Weekly billing cost check" />
+                    <button id="saveSkillNameBtn" class="btn btn-secondary btn-sm" type="button">Save name</button>
+                    <span id="saveNameFeedback" class="save-feedback">Saved</span>
+                  </div>
                 </div>
 
                 <div id="blueprintCanvasContent"></div>
+
+                <div id="blueprintPanelFooter" class="panel-footer hidden-field">
+                  <button id="skipToSandboxBtn" class="btn btn-secondary" type="button">Skip to sandbox test</button>
+                  <button id="continueToDataBtn" class="btn btn-primary" type="button">Next: Data sources</button>
+                </div>
               </div>
             </div>
           </section>
 
-          <!-- VIEW 2: DATA SOURCES -->
+          <!-- VIEW 2: DATA SOURCES (SIMPLIFIED FOR BUSINESS USERS) -->
           <section id="stage-grounding" class="stage-view">
             <div class="split-two">
               <div class="cfc-panel">
                 <div class="panel-header">
-                  <h3 class="panel-title">Add data source</h3>
+                  <h3 class="panel-title">Connect business data (optional)</h3>
                 </div>
-                <div class="panel-body">
-                  <form id="groundingForm" class="form-stack">
+                <div class="panel-subtitle">
+                  Does this skill need to check company data or documents? Select a business system below to attach it and automatically create safe sample records for testing. If your skill does not need external data, click <strong>Next: Run sandbox test</strong>.
+                </div>
+
+                <!-- Simple 1-Click Business Data Catalog -->
+                <div>
+                  <div class="data-source-option">
+                    <div>
+                      <div class="ledger-row-title">Cloud billing &amp; cost records (BigQuery)</div>
+                      <div class="ledger-row-sub">Daily cloud spend, project labels, and budget thresholds</div>
+                    </div>
+                    <button id="quickAttachBqBtn" class="btn btn-secondary btn-sm" type="button" data-source-type="bigquery" data-source-name="bq://finops_prod.gcp_billing_export_v1">Attach sample data</button>
+                  </div>
+
+                  <div class="data-source-option">
+                    <div>
+                      <div class="ledger-row-title">Purchase orders &amp; vendor invoices (ERP / SAP)</div>
+                      <div class="ledger-row-sub">Purchase orders, goods receipts, and invoice line items for matching</div>
+                    </div>
+                    <button id="quickAttachErpBtn" class="btn btn-secondary btn-sm" type="button" data-source-type="openapi" data-source-name="sap://erp_s4hana.po_invoice_three_way_match">Attach sample data</button>
+                  </div>
+
+                  <div class="data-source-option">
+                    <div>
+                      <div class="ledger-row-title">Service health &amp; latency logs (Cloud Monitoring)</div>
+                      <div class="ledger-row-sub">Service response times, error rates, and recent deployment revisions</div>
+                    </div>
+                    <button id="quickAttachSreBtn" class="btn btn-secondary btn-sm" type="button" data-source-type="mcp" data-source-name="mcp://cloud-monitoring.service_latency_slo">Attach sample data</button>
+                  </div>
+
+                  <div class="data-source-option">
+                    <div>
+                      <div class="ledger-row-title">Company approval &amp; policy guide (Google Docs)</div>
+                      <div class="ledger-row-sub">Spending approval limits, escalation contacts, and compliance rules</div>
+                    </div>
+                    <button id="quickAttachPolicyBtn" class="btn btn-secondary btn-sm" type="button" data-source-type="runbook" data-source-name="doc://enterprise-governance/approval_policy_v2.md">Attach sample data</button>
+                  </div>
+                </div>
+
+                <!-- Optional Technical Disclosure for Custom Tables/APIs -->
+                <details class="advanced-disclosure">
+                  <summary>Advanced: Add a custom table name or API schema</summary>
+                  <form id="groundingForm" class="form-stack" style="margin-top: 12px;">
                     <div class="field-group">
-                      <label class="field-label" for="grdSourceType">Source type</label>
+                      <label class="field-label" for="grdSourceType">System type</label>
                       <select id="grdSourceType" class="select-field">
-                        <option value="bigquery">BigQuery table schema</option>
-                        <option value="openapi">OpenAPI / REST specification</option>
-                        <option value="mcp">MCP tool schema</option>
-                        <option value="runbook">Runbook / policy markdown</option>
+                        <option value="bigquery">BigQuery table</option>
+                        <option value="openapi">REST / OpenAPI service</option>
+                        <option value="mcp">Enterprise MCP tool</option>
+                        <option value="runbook">Policy or runbook document</option>
                       </select>
                     </div>
 
                     <div class="field-group">
-                      <label class="field-label" for="grdName">Resource name or URI</label>
-                      <input id="grdName" class="input-field" type="text" placeholder="bq://finops_prod.gcp_billing_export_v1" />
+                      <label class="field-label" for="grdName">Table or document name</label>
+                      <input id="grdName" class="input-field" type="text" placeholder="e.g., sales_prod.quarterly_pipeline" />
                     </div>
 
                     <div class="field-group">
-                      <label class="field-label" for="grdSchema">Schema or sample definition (optional)</label>
-                      <textarea id="grdSchema" class="textarea-field textarea-mono" rows="5" placeholder="Paste table schema, OpenAPI snippet, or JSON..."></textarea>
+                      <label class="field-label" for="grdSchema">Sample columns or notes (optional)</label>
+                      <textarea id="grdSchema" class="textarea-field textarea-mono" rows="3" placeholder="Paste column names or sample JSON..."></textarea>
                     </div>
 
                     <div>
-                      <button id="addGroundingBtn" type="submit" class="btn btn-primary">Attach &amp; generate test data</button>
+                      <button id="addGroundingBtn" type="submit" class="btn btn-secondary btn-sm">Attach custom source</button>
                     </div>
                   </form>
+                </details>
+
+                <div class="panel-header" style="border-top: 1px solid var(--border-subtle);">
+                  <h3 class="panel-title">Attached data sources</h3>
                 </div>
                 <div id="groundingAssetsList"></div>
               </div>
 
               <div class="cfc-panel">
                 <div class="panel-header">
-                  <h3 class="panel-title">Generated test fixture (<code>mock_payload.json</code>)</h3>
+                  <h3 class="panel-title">Sample test data</h3>
+                </div>
+                <div class="panel-subtitle">
+                  Safe synthetic records generated from your selected data source so we can test your skill in the sandbox without touching live production systems.
                 </div>
                 <pre id="fixturePreviewCode" class="code-viewer"></pre>
                 <div class="panel-footer">
-                  <button id="groundingToSandboxBtn" class="btn btn-primary" type="button">Run sandbox test</button>
+                  <button id="groundingToSandboxBtn" class="btn btn-primary" type="button">Next: Run sandbox test</button>
                 </div>
               </div>
             </div>
@@ -206,7 +281,10 @@
               <div class="cfc-panel">
                 <div class="panel-header">
                   <h3 class="panel-title">Sandbox execution log</h3>
-                  <button id="runSandboxBtn" class="btn btn-secondary btn-sm" type="button">Run test</button>
+                  <button id="runSandboxBtn" class="btn btn-secondary btn-sm" type="button">Re-run test</button>
+                </div>
+                <div class="panel-subtitle">
+                  Dry-runs your generated skill code inside an isolated Cloud Run container to verify it executes cleanly and passes security checks.
                 </div>
                 <div id="agyEventStream"></div>
 
@@ -218,13 +296,13 @@
 
               <div class="cfc-panel">
                 <div class="panel-header">
-                  <h3 class="panel-title">Skill files</h3>
+                  <h3 class="panel-title">Generated skill files</h3>
                   <a id="downloadBundleBtnSandbox" class="btn btn-secondary btn-sm" href="#" download>Download .zip</a>
                 </div>
                 <div id="fileTabsBar" class="file-tab-bar"></div>
                 <pre id="fileViewerContent" class="code-viewer"></pre>
                 <div class="panel-footer">
-                  <button id="sandboxToEvalBtn" class="btn btn-primary" type="button">Run evaluations</button>
+                  <button id="sandboxToEvalBtn" class="btn btn-primary" type="button">Next: Run evaluations</button>
                 </div>
               </div>
             </div>
@@ -237,63 +315,95 @@
             <div class="split-two">
               <div class="cfc-panel">
                 <div class="panel-header">
-                  <h3 class="panel-title">Test cases (without skill vs. with skill)</h3>
-                  <button id="runHarborEvalBtn" class="btn btn-secondary btn-sm" type="button">Run evaluation</button>
+                  <h3 class="panel-title">Quality evaluation results (without skill vs. with skill)</h3>
+                  <button id="runHarborEvalBtn" class="btn btn-secondary btn-sm" type="button">Re-run evaluation</button>
+                </div>
+                <div class="panel-subtitle">
+                  Compares how accurately Gemini answers test scenarios with your skill enabled versus without it. Once evaluations pass, publishing is unlocked.
                 </div>
                 <div id="harborTrialsList"></div>
               </div>
 
               <div class="cfc-panel">
                 <div class="panel-header">
-                  <h3 class="panel-title">Evaluation files</h3>
+                  <h3 class="panel-title">Evaluation benchmark files</h3>
                 </div>
                 <div id="harborFileTabs" class="file-tab-bar"></div>
                 <pre id="harborFileViewer" class="code-viewer"></pre>
                 <div class="panel-footer">
-                  <button id="evalToPublishBtn" class="btn btn-primary" type="button">Continue to publish</button>
+                  <button id="evalToPublishBtn" class="btn btn-primary" type="button">Next: Publish skill</button>
                 </div>
               </div>
             </div>
           </section>
 
-          <!-- VIEW 5: PUBLISH -->
+          <!-- VIEW 5: PUBLISH (CHECKBOX TARGETS DEFAULTING TO AGENT REGISTRY) -->
           <section id="stage-publish" class="stage-view">
             <div class="split-two">
               <div class="cfc-panel">
                 <div class="panel-header">
-                  <h3 class="panel-title">Publish skill</h3>
+                  <h3 class="panel-title">Publish verified skill</h3>
+                </div>
+                <div class="panel-subtitle">
+                  Select where you want to register or export this verified skill. Google Cloud Agent Registry is selected by default.
                 </div>
                 <div class="panel-body">
                   <form id="publishForm" class="form-stack">
                     <div class="field-group">
-                      <label class="field-label" for="pubTarget">Destination</label>
-                      <select id="pubTarget" class="select-field">
-                        <option value="all">Agent Registry + Gemini Enterprise + .zip bundle</option>
-                        <option value="agent_registry">Google Cloud Agent Registry</option>
-                        <option value="gemini_enterprise">Gemini Enterprise app</option>
-                        <option value="zip_bundle">Download .zip bundle only</option>
-                      </select>
+                      <span class="field-label">Where to publish</span>
+                      <div class="publish-checkbox-list" role="group" aria-label="Where to publish">
+                        <label class="publish-checkbox-row" for="pubCheckAgentRegistry">
+                          <input id="pubCheckAgentRegistry" type="checkbox" name="pubTargets" value="agent_registry" checked />
+                          <div class="publish-checkbox-content">
+                            <div class="publish-checkbox-title">
+                              <span>Google Cloud Agent Registry</span>
+                              <span class="status-badge status-pass">Default</span>
+                            </div>
+                            <div class="publish-checkbox-desc">Register in your central project catalog so Gemini Enterprise and Antigravity agents can discover and use this skill.</div>
+                          </div>
+                        </label>
+
+                        <label class="publish-checkbox-row" for="pubCheckGeminiEnterprise">
+                          <input id="pubCheckGeminiEnterprise" type="checkbox" name="pubTargets" value="gemini_enterprise" />
+                          <div class="publish-checkbox-content">
+                            <div class="publish-checkbox-title">
+                              <span>Gemini Enterprise app</span>
+                            </div>
+                            <div class="publish-checkbox-desc">Attach directly to a specific Gemini Enterprise app in your organization.</div>
+                          </div>
+                        </label>
+
+                        <label class="publish-checkbox-row" for="pubCheckZipBundle">
+                          <input id="pubCheckZipBundle" type="checkbox" name="pubTargets" value="zip_bundle" />
+                          <div class="publish-checkbox-content">
+                            <div class="publish-checkbox-title">
+                              <span>Download .zip archive</span>
+                            </div>
+                            <div class="publish-checkbox-desc">Generate a downloadable .zip archive containing SKILL.md, Python scripts, and evaluation tests.</div>
+                          </div>
+                        </label>
+                      </div>
                     </div>
 
                     <div class="form-row-2">
                       <div class="field-group">
-                        <label class="field-label" for="pubProjectId">Project ID</label>
+                        <label class="field-label" for="pubProjectId">Google Cloud project ID</label>
                         <input id="pubProjectId" class="input-field tabular-nums" type="text" value="meridian-finops-prod-01" />
                       </div>
                       <div class="field-group">
-                        <label class="field-label" for="pubVersion">Version</label>
+                        <label class="field-label" for="pubVersion">Skill version</label>
                         <input id="pubVersion" class="input-field tabular-nums" type="text" value="v1.0.0" />
                       </div>
                     </div>
 
-                    <div class="field-group">
-                      <label class="field-label" for="pubGeAppId">Gemini Enterprise app ID (optional)</label>
+                    <div id="geAppIdFieldGroup" class="field-group hidden-field">
+                      <label class="field-label" for="pubGeAppId">Gemini Enterprise app ID</label>
                       <input id="pubGeAppId" class="input-field tabular-nums" type="text" value="gemini-enterprise-spark-prod" />
                     </div>
 
                     <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                      <button id="submitPublishBtn" type="submit" class="btn btn-primary">Publish skill</button>
-                      <a id="downloadZipDirectBtn" class="btn btn-secondary" href="#" download>Download .zip</a>
+                      <button id="submitPublishBtn" type="submit" class="btn btn-primary">Publish selected</button>
+                      <a id="downloadZipDirectBtn" class="btn btn-secondary" href="#" download>Download .zip now</a>
                     </div>
                   </form>
                 </div>

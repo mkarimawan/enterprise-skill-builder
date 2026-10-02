@@ -139,11 +139,12 @@ type HarborTrialResult struct {
 
 // PublishRequest specifies where to register/publish the verified skill.
 type PublishRequest struct {
-	Target              string `json:"target"` // "agent_registry", "gemini_enterprise", "zip_bundle", "all"
-	ProjectID           string `json:"projectId"`
-	Location            string `json:"location"`
-	DiscoveryEngineApp  string `json:"discoveryEngineApp"`
-	VersionTag          string `json:"versionTag"`
+	Target             string   `json:"target"`  // legacy single target
+	Targets            []string `json:"targets"` // ["agent_registry", "gemini_enterprise", "zip_bundle"]
+	ProjectID          string   `json:"projectId"`
+	Location           string   `json:"location"`
+	DiscoveryEngineApp string   `json:"discoveryEngineApp"`
+	VersionTag         string   `json:"versionTag"`
 }
 
 // PublishResult records the registration status and CLI/API receipts.

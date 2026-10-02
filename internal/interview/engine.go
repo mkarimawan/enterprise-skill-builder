@@ -90,33 +90,38 @@ func (e *Engine) synthesizeBlueprintAndReply(ctx context.Context, bp *models.Ski
 		}
 	}
 
-	// Detect domain & slug from user description on early turns
-	if bp.Name == "" || bp.Name == "untitled-enterprise-skill" || userTurns == 1 {
+	// Detect domain & slug from user description on early turns while preserving any custom name the user already saved
+	customName := ""
+	customDisplay := ""
+	if bp.Name != "" && bp.DisplayName != "" && bp.DisplayName != "Untitled skill" {
+		customName = bp.Name
+		customDisplay = bp.DisplayName
+	}
+
+	if bp.ReadinessScore == 0 || userTurns == 1 {
 		switch {
 		case strings.Contains(lower, "finops") || strings.Contains(lower, "cost") || strings.Contains(lower, "billing") || strings.Contains(lower, "anomaly"):
 			bp.Name = "finops-cost-anomaly-analyzer"
-			bp.DisplayName = "FinOps Cloud Cost Anomaly & Commitment Analyzer"
-			bp.Summary = "Detects daily GCP billing SKU spikes, correlates anomalies with Cloud Run / BigQuery job labels, and outputs deterministic JSON remediation actions for Gemini Enterprise (Spark / Sobi) and Antigravity."
+			bp.DisplayName = "Billing cost anomaly analyzer"
+			bp.Summary = "Checks daily cloud billing data for unexpected cost spikes, verifies required project labels, and recommends cost-saving actions."
 			bp.UseWhenTriggers = []string{
-				"User asks to investigate GCP billing spikes, daily cost anomalies, or SKU variance by service or project",
-				"User wants deterministic CUD (Committed Use Discount) or Cloud Run right-sizing recommendations from billing export rows",
+				"Investigate daily cloud billing spikes or unusual service cost increases",
+				"Check workloads for missing cost_center, owner, or environment labels",
 			}
 			bp.DoNotUseTriggers = []string{
-				"Do not use for modifying IAM billing account permissions or executing live Terraform state deletions directly",
-				"Do not use for non-GCP cloud invoices without standardized FOCUS or BigQuery billing export columns",
+				"Modifying billing account permissions or deleting live resources",
 			}
 			bp.InputParameters = []models.ParamSpec{
-				{Flag: "--input-json", Type: "path", Required: true, Description: "Path to BigQuery billing export JSON fixture or query result payload", Example: "tests/fixtures/mock_payload.json"},
-				{Flag: "--z-score-threshold", Type: "float", Required: false, Description: "Standard deviation threshold for flagging daily SKU cost spikes", Example: "2.5"},
-				{Flag: "--output-format", Type: "enum(json|markdown)", Required: false, Description: "Deterministic output contract format", Example: "json"},
+				{Flag: "--input-json", Type: "path", Required: true, Description: "Billing data records to analyze", Example: "tests/fixtures/mock_payload.json"},
+				{Flag: "--z-score-threshold", Type: "float", Required: false, Description: "Sensitivity threshold for flagging cost spikes", Example: "2.5"},
 			}
 			bp.Scripts = []models.ScriptSpec{
 				{
 					Filename:       "scripts/analyze_cost_anomalies.py",
-					Purpose:        "Computes rolling baseline mean/stddev per GCP service SKU, isolates anomalous workloads, and calculates deterministic right-sizing savings.",
+					Purpose:        "Calculates daily cost variance per service, flags spikes, and checks required governance labels.",
 					PackagesUsed:   []string{"json", "argparse", "statistics", "math", "datetime"},
 					VendoredLibs:   []string{},
-					OutputContract: "Strict JSON object containing `anomalies[]`, `total_daily_delta_usd`, `recommended_actions[]`, and `exit_code: 0`.",
+					OutputContract: "JSON summary with flagged anomalies, total daily dollar impact, and recommended actions.",
 				},
 			}
 			bp.ReferenceDocs = []string{
@@ -124,44 +129,45 @@ func (e *Engine) synthesizeBlueprintAndReply(ctx context.Context, bp *models.Ski
 				"references/finops_remediation_runbook.md",
 			}
 			bp.GuardrailsGotchas = []string{
-				"Exclude credits and sustained-use discounts before computing raw usage variance to avoid false-positive end-of-month spikes",
-				"Enforce zero external network calls inside the script; operate strictly on passed JSON/CSV payloads for GE air-gapped sandbox compliance",
+				"Exclude promotional credits and discounts before calculating usage spikes",
+				"Read-only analysis: never modify or delete cloud resources",
 			}
 			bp.EvalAssertions = []string{
-				"Identifies anomalous SKU (`Cloud Run CPU Allocation` or `BigQuery Analysis`) with exact z-score >= threshold",
-				"Outputs valid JSON schema with `status: OK` and deterministic USD savings calculation within 0.01 tolerance",
-				"Executes with zero network sockets under Python 3.11 frozen GE runtime",
+				"Flags cost spikes exceeding threshold with accurate dollar variance",
+				"Identifies missing owner or cost_center labels on flagged workloads",
 			}
-			bp.ReadinessScore = 68
+			bp.ReadinessScore = 75
 			bp.OpenQuestions = []string{
-				"What z-score threshold or minimum dollar delta ($ USD) should trigger a P1 FinOps alert vs. informational notice?",
-				"Should the skill script also flag untagged resources missing mandatory `cost_center` or `env` labels?",
+				"What minimum daily dollar increase should trigger a high-priority alert?",
 			}
-			return "I have captured the initial blueprint for **finops-cost-anomaly-analyzer** on the live canvas, targeting both Gemini Enterprise (Spark / Sobi / Dolphin) and Antigravity 2.0.\n\nTo make `scripts/analyze_cost_anomalies.py` 100% deterministic, I have two quick clarifying questions:\n1. **Threshold Rules**: What minimum daily dollar increase (for example, `$500/day`) or z-score threshold (for example, `2.5 sigma`) should classify an anomaly as `CRITICAL`?\n2. **Label Governance**: Should the script also audit each anomalous resource for missing `cost_center` and `owner` labels?"
+			if customName != "" {
+				bp.Name = customName
+				bp.DisplayName = customDisplay
+			}
+			return fmt.Sprintf("I have drafted **%s** in the skill summary panel on the right.\n\nTwo quick questions if you want to refine it (or you can continue directly to the next step):\n1. What minimum daily dollar increase (for example, `$250/day`) should trigger an alert?\n2. Are there specific project labels (like `cost_center` or `owner`) that every workload must have?", bp.DisplayName)
 
-		case strings.Contains(lower, "sap") || strings.Contains(lower, "order") || strings.Contains(lower, "invoice") || strings.Contains(lower, "reconcil"):
+		case strings.Contains(lower, "sap") || strings.Contains(lower, "order") || strings.Contains(lower, "invoice") || strings.Contains(lower, "reconcil") || strings.Contains(lower, "match"):
 			bp.Name = "sap-order-invoice-reconciler"
-			bp.DisplayName = "SAP Order-to-Cash & Three-Way Invoice Reconciler"
-			bp.Summary = "Performs deterministic three-way matching across SAP Purchase Orders (EKKO/EKPO), Goods Receipts (MSEG), and Vendor Invoices (RBKP), flagging quantity or price tolerance breaches."
+			bp.DisplayName = "Purchase order & invoice matcher"
+			bp.Summary = "Matches purchase orders, goods receipts, and vendor invoices, flagging price or quantity discrepancies beyond your allowed tolerance."
 			bp.UseWhenTriggers = []string{
-				"User asks to reconcile SAP Purchase Orders against Goods Receipts and Vendor Invoices",
-				"User wants to audit three-way match discrepancies or blocked payment reasons in Gemini Enterprise Spark",
+				"Match purchase orders against goods receipts and vendor invoices",
+				"Audit blocked invoices or price variance reasons",
 			}
 			bp.DoNotUseTriggers = []string{
-				"Do not use for posting live FI/CO journal entries without human finance approval",
-				"Do not use for HR payroll reconciliation",
+				"Posting live accounting entries without finance approval",
 			}
 			bp.InputParameters = []models.ParamSpec{
-				{Flag: "--input-json", Type: "path", Required: true, Description: "Path to extracted SAP PO/GR/Invoice JSON bundle", Example: "tests/fixtures/mock_payload.json"},
-				{Flag: "--price-tolerance-pct", Type: "float", Required: false, Description: "Allowed percentage variance between PO unit price and Invoice unit price", Example: "2.0"},
+				{Flag: "--input-json", Type: "path", Required: true, Description: "Purchase order, receipt, and invoice records", Example: "tests/fixtures/mock_payload.json"},
+				{Flag: "--price-tolerance-pct", Type: "float", Required: false, Description: "Allowed percentage difference between PO price and invoice price", Example: "2.0"},
 			}
 			bp.Scripts = []models.ScriptSpec{
 				{
 					Filename:       "scripts/reconcile_sap_three_way.py",
-					Purpose:        "Validates three-way match across PO, Goods Receipt, and Invoice lines and emits deterministic block/release codes.",
+					Purpose:        "Validates three-way match across purchase orders, receipts, and invoices using exact currency math.",
 					PackagesUsed:   []string{"json", "argparse", "decimal", "datetime"},
 					VendoredLibs:   []string{},
-					OutputContract: "Strict JSON report with `matched_documents[]`, `blocked_invoices[]`, `variance_summary`, and `audit_hash`.",
+					OutputContract: "JSON report listing matched documents, blocked invoices, and exact variance amounts.",
 				},
 			}
 			bp.ReferenceDocs = []string{
@@ -169,44 +175,49 @@ func (e *Engine) synthesizeBlueprintAndReply(ctx context.Context, bp *models.Ski
 				"references/tolerance_key_policy.md",
 			}
 			bp.GuardrailsGotchas = []string{
-				"Always use exact `decimal.Decimal` arithmetic (never IEEE 754 float) for currency and tax reconciliation",
-				"Normalize SAP currency decimals (such as JPY/KRW zero-decimal currencies) before computing line totals",
+				"Use exact decimal currency math to avoid rounding errors",
+				"Handle zero-decimal currencies such as JPY and KRW accurately",
 			}
 			bp.EvalAssertions = []string{
-				"Uses exact Decimal arithmetic with zero floating-point rounding drift",
-				"Flags invoices exceeding price tolerance (`> 2.0%`) or quantity mismatch (`GR_QTY < INV_QTY`)",
+				"Flags invoices exceeding the allowed price tolerance percentage",
+				"Flags invoices where billed quantity exceeds received quantity",
 			}
-			bp.ReadinessScore = 72
+			bp.ReadinessScore = 78
 			bp.OpenQuestions = []string{
-				"What price tolerance percentage (for example, 2%) and quantity variance policy should trigger an invoice payment block?",
-				"Do you need multi-currency conversion handling or single-company-code currency matching?",
+				"What price tolerance percentage (for example, 2%) should block an invoice for review?",
 			}
-			return "I have structured the **sap-order-invoice-reconciler** blueprint on the canvas with `decimal.Decimal` currency precision for Gemini Enterprise Spark and Antigravity.\n\nTwo quick questions to lock down the deterministic rules:\n1. **Tolerance Policy**: Should we enforce a strict `2.0%` unit-price tolerance and `0%` quantity over-delivery tolerance (`INV_QTY <= GR_QTY`)?\n2. **Zero-Decimal Currencies**: Do we need special handling for zero-decimal currencies like `JPY` and `KRW` in the SAP payload?"
+			if customName != "" {
+				bp.Name = customName
+				bp.DisplayName = customDisplay
+			}
+			return fmt.Sprintf("I have drafted **%s** in the skill summary panel on the right.\n\nYou can refine the rules here in chat (for example, adjusting the `2%%` price tolerance) or click **Continue to data sources** on the right.", bp.DisplayName)
 
 		default:
 			slug := slugifySkillName(latest)
 			bp.Name = slug
 			bp.DisplayName = titleizeSlug(slug)
-			bp.Summary = fmt.Sprintf("Deterministic enterprise skill (%s) built for Gemini Enterprise (Spark / Sobi / Dolphin) and Antigravity 2.0.", strings.TrimSpace(latest))
+			if customName != "" {
+				bp.Name = customName
+				bp.DisplayName = customDisplay
+			}
+			bp.Summary = fmt.Sprintf("Automates and verifies: %s", strings.TrimSpace(latest))
 			bp.UseWhenTriggers = []string{
-				fmt.Sprintf("User requests workflow automation or deterministic analysis for: %s", strings.TrimSpace(latest)),
-				"Agent needs validated, schema-checked JSON output rather than free-form LLM guessing",
+				fmt.Sprintf("User asks to run or analyze: %s", strings.TrimSpace(latest)),
 			}
 			bp.DoNotUseTriggers = []string{
-				"Do not use for unauthenticated destructive mutations in production without explicit approval token",
-				"Do not use for unrelated general knowledge queries",
+				"Making destructive changes in production without approval",
 			}
 			bp.InputParameters = []models.ParamSpec{
-				{Flag: "--input-json", Type: "path", Required: true, Description: "Path to structured input JSON payload or grounded fixture", Example: "tests/fixtures/mock_payload.json"},
-				{Flag: "--threshold", Type: "float", Required: false, Description: "Deterministic policy threshold for anomaly/rule evaluation", Example: "2.0"},
+				{Flag: "--input-json", Type: "path", Required: true, Description: "Input records to process", Example: "tests/fixtures/mock_payload.json"},
+				{Flag: "--threshold", Type: "float", Required: false, Description: "Threshold or rule limit for flagging items", Example: "2.0"},
 			}
 			bp.Scripts = []models.ScriptSpec{
 				{
 					Filename:       "scripts/run_deterministic_skill.py",
-					Purpose:        "Validates input payload against enterprise schema, executes deterministic domain rules, and emits structured JSON output.",
+					Purpose:        "Checks input records against your business rules and produces a structured report.",
 					PackagesUsed:   []string{"json", "argparse", "statistics", "datetime"},
 					VendoredLibs:   []string{},
-					OutputContract: "Strict JSON payload with `status`, `summary_metrics`, `findings[]`, and `remediation_plan[]`.",
+					OutputContract: "Structured JSON report with status, summary metrics, and flagged items.",
 				},
 			}
 			bp.ReferenceDocs = []string{
@@ -214,38 +225,37 @@ func (e *Engine) synthesizeBlueprintAndReply(ctx context.Context, bp *models.Ski
 				"references/operational_guardrails.md",
 			}
 			bp.GuardrailsGotchas = []string{
-				"Must execute cleanly inside the air-gapped Gemini Enterprise Python 3.11 sandbox without outbound internet sockets",
-				"All CLI arguments must be parsed deterministically via argparse and return exit code 0 on valid runs",
+				"Runs safely in an isolated sandbox with read-only access",
+				"Validates all required fields before producing recommendations",
 			}
 			bp.EvalAssertions = []string{
-				"Script returns exit code 0 and valid JSON conforming to the output contract",
-				"Accurately flags policy violations and computes exact metrics on grounded mock fixtures",
+				"Produces accurate output on sample test records",
+				"Correctly flags items that breach your threshold rules",
 			}
-			bp.ReadinessScore = 65
+			bp.ReadinessScore = 72
 			bp.OpenQuestions = []string{
-				"What specific business thresholds, SLA limits, or validation rules must the Python script enforce?",
-				"Which enterprise data schema (BigQuery table, OpenAPI spec, or MCP tool output) should ground the input contract?",
+				"Are there specific thresholds or approval limits this skill should enforce?",
 			}
-			return fmt.Sprintf("I have initialized the **%s** blueprint on the live canvas.\n\nTo make the skill 100%% deterministic for Gemini Enterprise (Spark / Sobi) and Antigravity, let's lock down two details:\n1. **Business Rules & Thresholds**: What exact thresholds, calculations, or policy checks should the Python script perform instead of leaving them to LLM estimation?\n2. **Input Schema & Edge Cases**: Are there specific fields, missing-tag checks, or gotchas we should enforce in the input payload?", bp.Name)
+			return fmt.Sprintf("I have drafted **%s** in the skill summary panel on the right.\n\nYou can rename the skill at the top of the summary panel, reply here to add specific thresholds or rules, or continue to the next step.", bp.DisplayName)
 		}
 	}
 
-	// Subsequent user turns refine thresholds, guardrails, and push Readiness Score to 95-100%
-	bp.GuardrailsGotchas = append(bp.GuardrailsGotchas, fmt.Sprintf("Customer interview rule: %s", strings.TrimSpace(latest)))
-	bp.EvalAssertions = append(bp.EvalAssertions, fmt.Sprintf("Verifies interview constraint: %s", strings.TrimSpace(latest)))
+	// Subsequent user turns refine thresholds, guardrails, and push Readiness Score to 96%
+	bp.GuardrailsGotchas = append(bp.GuardrailsGotchas, fmt.Sprintf("Business rule: %s", strings.TrimSpace(latest)))
+	bp.EvalAssertions = append(bp.EvalAssertions, fmt.Sprintf("Verifies rule: %s", strings.TrimSpace(latest)))
 	if len(bp.InputParameters) < 4 && (strings.Contains(lower, "label") || strings.Contains(lower, "tag") || strings.Contains(lower, "cost_center")) {
 		bp.InputParameters = append(bp.InputParameters, models.ParamSpec{
 			Flag:        "--require-labels",
 			Type:        "csv",
 			Required:    false,
-			Description: "Mandatory governance labels to audit on every record",
+			Description: "Required project labels to check on every record",
 			Example:     "cost_center,owner,env",
 		})
 	}
 	bp.OpenQuestions = []string{}
 	bp.ReadinessScore = 96
 
-	return fmt.Sprintf("Blueprint updated with your constraints (`Readiness Score: %d%%`).\n\nAll triggers (`<use_when>` / `<do_not_use_for>`), CLI input flags, deterministic Python 3.11 script contracts, and edge-case guardrails are locked in on the canvas. You can now attach optional **Enterprise Grounding Schemas** (OpenAPI, BigQuery, or MCP) or click **Launch Cloud Run Sandbox (AGY Build & Self-Heal)** to compile and verify the skill.", bp.ReadinessScore)
+	return fmt.Sprintf("Updated **%s** with your rule (`%d%% ready`).\n\nYou can now connect optional business data in **Data sources**, or go straight to **Sandbox test** to verify the skill.", bp.DisplayName, bp.ReadinessScore)
 }
 
 func (e *Engine) callVertexGemini(ctx context.Context, currentBP models.SkillBlueprint, history []models.ChatMessage) (string, models.SkillBlueprint, error) {

@@ -84,10 +84,27 @@ func Publish(session *models.SkillSession, req models.PublishRequest, userEmail 
 	var results []models.PublishResult
 	now := time.Now().UTC()
 
-	if req.Target == "agent_registry" || req.Target == "all" {
+	selected := make(map[string]bool)
+	for _, t := range req.Targets {
+		selected[t] = true
+	}
+	if len(selected) == 0 {
+		switch req.Target {
+		case "all":
+			selected["agent_registry"] = true
+			selected["gemini_enterprise"] = true
+			selected["zip_bundle"] = true
+		case "gemini_enterprise", "zip_bundle", "agent_registry":
+			selected[req.Target] = true
+		default:
+			selected["agent_registry"] = true
+		}
+	}
+
+	if selected["agent_registry"] {
 		results = append(results, models.PublishResult{
 			ID:           fmt.Sprintf("pub-reg-%d", now.UnixNano()),
-			Target:       "Google Cloud Agent Platform Skill Registry",
+			Target:       "Google Cloud Agent Registry",
 			Status:       "REGISTERED",
 			ResourceURI:  fmt.Sprintf("projects/%s/locations/%s/skills/%s@%s", projectID, location, skillSlug, version),
 			CLICommand:   fmt.Sprintf("gcloud alpha agent-registry skills create %s --project=%s --location=%s --bundle-file=%s.zip --version=%s", skillSlug, projectID, location, skillSlug, version),
@@ -98,11 +115,11 @@ func Publish(session *models.SkillSession, req models.PublishRequest, userEmail 
 		})
 	}
 
-	if req.Target == "gemini_enterprise" || req.Target == "all" {
+	if selected["gemini_enterprise"] {
 		results = append(results, models.PublishResult{
 			ID:           fmt.Sprintf("pub-ge-%d", now.UnixNano()+1),
-			Target:       "Gemini Enterprise App (Spark / Sobi / Dolphin via DiscoveryEngine AgentService)",
-			Status:       "MOUNTED_ON_SPARK_AND_GE",
+			Target:       "Gemini Enterprise App",
+			Status:       "ATTACHED",
 			ResourceURI:  fmt.Sprintf("projects/%s/locations/%s/collections/default_collection/engines/%s/agents/default_sobi_agent/skills/%s", projectID, location, appID, skillSlug),
 			CLICommand:   fmt.Sprintf("curl -X POST https://discoveryengine.googleapis.com/v1alpha/projects/%s/locations/%s/collections/default_collection/engines/%s/agents/default_assistant:uploadAgentFile -F 'file=@%s.zip'", projectID, location, appID, skillSlug),
 			BundleSizeKB: sizeKB,
@@ -112,10 +129,10 @@ func Publish(session *models.SkillSession, req models.PublishRequest, userEmail 
 		})
 	}
 
-	if req.Target == "zip_bundle" || req.Target == "all" {
+	if selected["zip_bundle"] {
 		results = append(results, models.PublishResult{
 			ID:           fmt.Sprintf("pub-zip-%d", now.UnixNano()+2),
-			Target:       "Universal Skill + SkillsBench Harbor Bundle (.zip)",
+			Target:       "Skill Archive (.zip)",
 			Status:       "READY_FOR_DOWNLOAD",
 			ResourceURI:  fmt.Sprintf("/api/sessions/%s/download", session.ID),
 			CLICommand:   fmt.Sprintf("harbor jobs start -p ./harbor_task -a agy -m google/gemini-3.6-flash"),

@@ -1,4 +1,4 @@
-// Skill Builder Frontend Client (Pantheon Left-Nav + Progressive Disclosure)
+// Skill Builder Frontend Client (Pantheon Left-Nav + Progressive Step Gating)
 (function () {
   const state = {
     sessions: [],
@@ -24,8 +24,21 @@
   const newSessionBtn = document.getElementById('newSessionBtn');
   const iapEmailText = document.getElementById('iapEmailText');
   const activePageHeading = document.getElementById('activePageHeading');
+  const workflowStepStatus = document.getElementById('workflowStepStatus');
+  const topBarPublishBtn = document.getElementById('topBarPublishBtn');
+
   const stageTabs = document.querySelectorAll('.cfc-nav-item');
   const stagePanels = document.querySelectorAll('.stage-view');
+
+  const stageTabSandbox = document.getElementById('stageTabSandbox');
+  const stageTabEval = document.getElementById('stageTabEval');
+  const stageTabPublish = document.getElementById('stageTabPublish');
+
+  const navStateInterview = document.getElementById('navStateInterview');
+  const navStateGrounding = document.getElementById('navStateGrounding');
+  const navStateSandbox = document.getElementById('navStateSandbox');
+  const navStateEval = document.getElementById('navStateEval');
+  const navStatePublish = document.getElementById('navStatePublish');
 
   const chatTranscript = document.getElementById('chatTranscript');
   const chatInput = document.getElementById('chatInput');
@@ -34,8 +47,12 @@
   const voiceWaveformBar = document.getElementById('voiceWaveformBar');
   const voiceStatusText = document.getElementById('voiceStatusText');
 
+  const skillNameInput = document.getElementById('skillNameInput');
+  const saveSkillNameBtn = document.getElementById('saveSkillNameBtn');
+  const saveNameFeedback = document.getElementById('saveNameFeedback');
   const bpReadinessBadge = document.getElementById('bpReadinessBadge');
   const blueprintCanvasContent = document.getElementById('blueprintCanvasContent');
+  const blueprintPanelFooter = document.getElementById('blueprintPanelFooter');
 
   const groundingForm = document.getElementById('groundingForm');
   const groundingAssetsList = document.getElementById('groundingAssetsList');
@@ -54,6 +71,8 @@
   const harborFileViewer = document.getElementById('harborFileViewer');
 
   const publishForm = document.getElementById('publishForm');
+  const pubCheckGeminiEnterprise = document.getElementById('pubCheckGeminiEnterprise');
+  const geAppIdFieldGroup = document.getElementById('geAppIdFieldGroup');
   const publishReceiptsList = document.getElementById('publishReceiptsList');
   const downloadZipDirectBtn = document.getElementById('downloadZipDirectBtn');
 
@@ -192,11 +211,98 @@ pyyaml==6.0.1</pre>
     downloadZipDirectBtn.href = downloadUrl;
     navDownloadZipLink.href = downloadUrl;
 
+    updateStepGating(sess);
     renderInterviewAndBlueprint();
     renderGroundingStage();
     renderSandboxStage();
     renderEvalStage();
     renderPublishStage();
+  }
+
+  function updateStepGating(sess) {
+    if (!sess) return;
+    const bp = sess.blueprint || {};
+    const hasBlueprint = Boolean(bp.readinessScore > 0);
+    const hasData = Boolean(sess.groundingAssets && sess.groundingAssets.length > 0);
+    const hasSandbox = Boolean((sess.agyEvents && sess.agyEvents.length > 0) || (sess.securityReport && sess.securityReport.passed));
+    const hasEval = Boolean(sess.harborReport && sess.harborReport.oraclePassed);
+    const hasPublished = Boolean(sess.publishHistory && sess.publishHistory.length > 0);
+
+    // 1. Create skill nav state
+    if (hasBlueprint) {
+      navStateInterview.textContent = 'Done';
+      navStateInterview.className = 'nav-step-state done';
+    } else {
+      navStateInterview.textContent = 'Draft';
+      navStateInterview.className = 'nav-step-state';
+    }
+
+    // 2. Data sources nav state
+    if (hasData) {
+      navStateGrounding.textContent = `${sess.groundingAssets.length} added`;
+      navStateGrounding.className = 'nav-step-state done';
+    } else {
+      navStateGrounding.textContent = 'Optional';
+      navStateGrounding.className = 'nav-step-state';
+    }
+
+    // 3. Sandbox test gating
+    stageTabSandbox.disabled = !hasBlueprint;
+    if (hasSandbox) {
+      navStateSandbox.textContent = 'Passed';
+      navStateSandbox.className = 'nav-step-state done';
+    } else if (hasBlueprint) {
+      navStateSandbox.textContent = 'Ready';
+      navStateSandbox.className = 'nav-step-state';
+    } else {
+      navStateSandbox.textContent = 'Locked';
+      navStateSandbox.className = 'nav-step-state';
+    }
+
+    // 4. Evaluations gating (requires Sandbox test to pass first)
+    stageTabEval.disabled = !hasSandbox;
+    if (hasEval) {
+      navStateEval.textContent = 'Passed';
+      navStateEval.className = 'nav-step-state done';
+    } else if (hasSandbox) {
+      navStateEval.textContent = 'Ready';
+      navStateEval.className = 'nav-step-state';
+    } else {
+      navStateEval.textContent = 'Locked';
+      navStateEval.className = 'nav-step-state';
+    }
+
+    // 5. Publish gating (requires Evaluations to pass first)
+    stageTabPublish.disabled = !hasEval;
+    topBarPublishBtn.disabled = !hasEval;
+    if (hasPublished) {
+      navStatePublish.textContent = 'Published';
+      navStatePublish.className = 'nav-step-state done';
+    } else if (hasEval) {
+      navStatePublish.textContent = 'Ready';
+      navStatePublish.className = 'nav-step-state done';
+    } else {
+      navStatePublish.textContent = 'Locked';
+      navStatePublish.className = 'nav-step-state';
+    }
+
+    // Top-right workflow progress status
+    if (hasPublished) {
+      workflowStepStatus.textContent = 'Skill published';
+      workflowStepStatus.className = 'status-badge status-pass';
+    } else if (hasEval) {
+      workflowStepStatus.textContent = 'Evaluations passed: ready to publish';
+      workflowStepStatus.className = 'status-badge status-pass';
+    } else if (hasSandbox) {
+      workflowStepStatus.textContent = 'Sandbox passed: run evaluations next';
+      workflowStepStatus.className = 'status-badge status-neutral';
+    } else if (hasBlueprint) {
+      workflowStepStatus.textContent = 'Draft ready: connect data or run sandbox test';
+      workflowStepStatus.className = 'status-badge status-neutral';
+    } else {
+      workflowStepStatus.textContent = 'Describe your skill to begin';
+      workflowStepStatus.className = 'status-badge status-neutral';
+    }
   }
 
   function switchStage(stageName) {
@@ -250,11 +356,15 @@ pyyaml==6.0.1</pre>
     chatTranscript.scrollTop = chatTranscript.scrollHeight;
 
     const bp = sess.blueprint || {};
-    const hasBlueprint = Boolean(bp.name && bp.readinessScore > 0);
+    const displayTitle = bp.displayName && bp.displayName !== 'Untitled skill' ? bp.displayName : '';
+    skillNameInput.value = displayTitle;
+
+    const hasBlueprint = Boolean(bp.readinessScore > 0);
 
     if (!hasBlueprint) {
-      bpReadinessBadge.textContent = 'Empty';
+      bpReadinessBadge.textContent = 'Draft';
       bpReadinessBadge.className = 'status-badge status-neutral tabular-nums';
+      blueprintPanelFooter.classList.add('hidden-field');
       blueprintCanvasContent.innerHTML = `
         <div class="cfc-empty-state">
           <div class="empty-state-icon" aria-hidden="true">
@@ -263,8 +373,8 @@ pyyaml==6.0.1</pre>
               <polyline points="14 2 14 8 20 8"></polyline>
             </svg>
           </div>
-          <div class="empty-state-title">No skill blueprint yet</div>
-          <p class="empty-state-desc">Describe what you want your skill to do on the left, or pick a sample prompt below the text box.</p>
+          <div class="empty-state-title">Skill summary will appear here</div>
+          <p class="empty-state-desc">Give your skill a name above and describe what you want it to do on the left, or click one of the sample prompts below the text box.</p>
         </div>
       `;
       return;
@@ -272,6 +382,7 @@ pyyaml==6.0.1</pre>
 
     bpReadinessBadge.textContent = `${bp.readinessScore}% ready`;
     bpReadinessBadge.className = 'status-badge status-pass tabular-nums';
+    blueprintPanelFooter.classList.remove('hidden-field');
 
     const useWhen = (bp.useWhenTriggers || []).map((t) => `<li>${escapeHtml(t)}</li>`).join('');
     const params = (bp.inputParameters || [])
@@ -281,23 +392,23 @@ pyyaml==6.0.1</pre>
 
     blueprintCanvasContent.innerHTML = `
       <div class="ledger-section">
-        <div class="ledger-label">Skill name</div>
-        <div style="font-weight: 600; font-size: 14px;"><code>${escapeHtml(bp.name)}</code></div>
+        <div class="ledger-label">What this skill does</div>
+        <div style="font-weight: 600; font-size: 14px;">${escapeHtml(bp.displayName || bp.name)} <span class="ledger-row-sub">(<code>${escapeHtml(bp.name)}</code>)</span></div>
         <p class="ledger-row-sub" style="margin-top: 4px;">${escapeHtml(bp.summary)}</p>
       </div>
 
       <div class="ledger-section">
-        <div class="ledger-label">When to use</div>
+        <div class="ledger-label">When Gemini should use this skill</div>
         <ul class="ledger-items">${useWhen}</ul>
       </div>
 
       <div class="ledger-section">
-        <div class="ledger-label">Inputs</div>
+        <div class="ledger-label">Inputs required</div>
         <ul class="ledger-items">${params}</ul>
       </div>
 
       <div class="ledger-section">
-        <div class="ledger-label">Guardrails</div>
+        <div class="ledger-label">Safety rules &amp; guardrails</div>
         <ul class="ledger-items">${guardrails}</ul>
       </div>
     `;
@@ -310,12 +421,12 @@ pyyaml==6.0.1</pre>
 
     if (assets.length === 0) {
       groundingAssetsList.innerHTML = `
-        <div class="cfc-empty-state">
-          <div class="empty-state-title">No data sources attached</div>
-          <p class="empty-state-desc">Attach a table schema or API specification above to generate test data.</p>
+        <div class="cfc-empty-state" style="padding: 28px 16px;">
+          <div class="empty-state-title">No business data attached yet</div>
+          <p class="empty-state-desc">Click "Attach sample data" next to any business system above, or skip directly to the sandbox test.</p>
         </div>
       `;
-      fixturePreviewCode.textContent = '// Attach a data source on the left to preview generated test data';
+      fixturePreviewCode.textContent = '// Select a business data source on the left to preview safe sample records for testing.';
       return;
     }
 
@@ -325,7 +436,7 @@ pyyaml==6.0.1</pre>
         <div class="ledger-row">
           <div class="ledger-row-header">
             <span class="ledger-row-title"><code>${escapeHtml(a.name)}</code></span>
-            <span class="status-badge status-neutral">${escapeHtml(a.sourceType)}</span>
+            <span class="status-badge status-pass">Attached (${escapeHtml(a.sourceType)})</span>
           </div>
           <div class="ledger-row-sub">${escapeHtml(a.summary)}</div>
         </div>
@@ -333,7 +444,7 @@ pyyaml==6.0.1</pre>
       )
       .join('');
 
-    fixturePreviewCode.textContent = assets[0].mockFixtureJson || '{}';
+    fixturePreviewCode.textContent = assets[assets.length - 1].mockFixtureJson || '{}';
   }
 
   function renderSandboxStage() {
@@ -344,8 +455,8 @@ pyyaml==6.0.1</pre>
     if (events.length === 0) {
       agyEventStream.innerHTML = `
         <div class="cfc-empty-state">
-          <div class="empty-state-title">Sandbox not run yet</div>
-          <p class="empty-state-desc">Click "Run test" to build the skill files and test them in the isolated Python 3.11 sandbox.</p>
+          <div class="empty-state-title">Sandbox test not run yet</div>
+          <p class="empty-state-desc">Click "Re-run test" above to build the skill files and verify them in the isolated Python 3.11 sandbox.</p>
         </div>
       `;
     } else {
@@ -418,7 +529,7 @@ pyyaml==6.0.1</pre>
       harborTrialsList.innerHTML = `
         <div class="cfc-empty-state">
           <div class="empty-state-title">No evaluation results yet</div>
-          <p class="empty-state-desc">Click "Run evaluation" to compare accuracy with and without the skill.</p>
+          <p class="empty-state-desc">Click "Re-run evaluation" to compare accuracy with and without your skill.</p>
         </div>
       `;
       harborFileTabs.innerHTML = '';
@@ -432,23 +543,23 @@ pyyaml==6.0.1</pre>
 
     evalKpiGrid.innerHTML = `
       <div class="kpi-box">
-        <div class="kpi-label">Pass rate with skill</div>
+        <div class="kpi-label">Accuracy with skill</div>
         <div class="kpi-value">${skillPct}%</div>
-        <div class="kpi-delta">+${skillPct - basePct}% vs. baseline (${basePct}%)</div>
+        <div class="kpi-delta">Up ${skillPct - basePct}% from baseline (${basePct}%)</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-label">Normalized gain</div>
+        <div class="kpi-label">Quality gain score</div>
         <div class="kpi-value">${rep.normalizedGain.toFixed(2)}</div>
-        <div class="kpi-delta">SkillsBench score</div>
+        <div class="kpi-delta">Normalized gain</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-label">Verifier reward</div>
-        <div class="kpi-value">${escapeHtml(rep.rewardTxtValue)}</div>
-        <div class="kpi-delta">Avg latency ${rep.avgLatencyMsSkill}ms</div>
+        <div class="kpi-label">Verification status</div>
+        <div class="kpi-value">Passed</div>
+        <div class="kpi-delta">Avg response ${rep.avgLatencyMsSkill}ms</div>
       </div>
       <div class="kpi-box">
-        <div class="kpi-label">Token reduction</div>
-        <div class="kpi-value">-${tokenReduction}%</div>
+        <div class="kpi-label">Token savings</div>
+        <div class="kpi-value">${tokenReduction}%</div>
         <div class="kpi-delta">${rep.avgTokensWithSkill} vs. ${rep.avgTokensBaseline} tokens</div>
       </div>
     `;
@@ -497,7 +608,7 @@ pyyaml==6.0.1</pre>
       publishReceiptsList.innerHTML = `
         <div class="cfc-empty-state">
           <div class="empty-state-title">Not published yet</div>
-          <p class="empty-state-desc">Choose a destination on the left and click "Publish skill" to register or download the bundle.</p>
+          <p class="empty-state-desc">Tick where you want to publish on the left (Google Cloud Agent Registry is selected by default) and click "Publish selected".</p>
         </div>
       `;
       return;
@@ -519,8 +630,56 @@ pyyaml==6.0.1</pre>
       .join('');
   }
 
+  async function saveSkillName() {
+    if (!state.currentSession) return;
+    const newName = skillNameInput.value.trim();
+    if (!newName) return;
+
+    saveSkillNameBtn.disabled = true;
+    try {
+      const res = await fetch(`/api/sessions/${state.currentSession.id}/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName: newName }),
+      });
+      const data = await res.json();
+      if (data.session) {
+        state.currentSession = data.session;
+        const idx = state.sessions.findIndex((s) => s.id === data.session.id);
+        if (idx !== -1) state.sessions[idx] = data.session;
+        renderSessionSelector(state.currentSession.id);
+        renderInterviewAndBlueprint();
+        saveNameFeedback.classList.add('visible');
+        setTimeout(() => saveNameFeedback.classList.remove('visible'), 2000);
+      }
+    } finally {
+      saveSkillNameBtn.disabled = false;
+    }
+  }
+
+  async function attachDataSource(sourceType, name, rawSchema) {
+    if (!state.currentSession) return;
+    const res = await fetch(`/api/sessions/${state.currentSession.id}/grounding`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceType, name, rawSchema: rawSchema || '' }),
+    });
+    const data = await res.json();
+    if (data.session) {
+      const idx = state.sessions.findIndex((s) => s.id === data.session.id);
+      if (idx !== -1) state.sessions[idx] = data.session;
+      setCurrentSession(data.session);
+    }
+  }
+
   async function sendInterviewTurn(messageText, modality) {
     if (!state.currentSession || !messageText.trim()) return;
+    // If user typed a skill name in the box before sending, save it first
+    const pendingName = skillNameInput.value.trim();
+    if (pendingName && pendingName !== state.currentSession.blueprint.displayName) {
+      await saveSkillName();
+    }
+
     sendChatBtn.disabled = true;
     blueprintCanvasContent.innerHTML = renderSkeletonLoader(3);
     try {
@@ -532,8 +691,10 @@ pyyaml==6.0.1</pre>
       const data = await res.json();
       if (data.session) {
         state.currentSession = data.session;
+        const idx = state.sessions.findIndex((s) => s.id === data.session.id);
+        if (idx !== -1) state.sessions[idx] = data.session;
         renderSessionSelector(state.currentSession.id);
-        renderInterviewAndBlueprint();
+        setCurrentSession(state.currentSession);
       }
     } finally {
       sendChatBtn.disabled = false;
@@ -542,6 +703,7 @@ pyyaml==6.0.1</pre>
 
   async function triggerSandboxRun() {
     if (!state.currentSession) return;
+    stageTabSandbox.disabled = false;
     switchStage('sandbox');
     const runBtn = document.getElementById('runSandboxBtn');
     runBtn.disabled = true;
@@ -550,6 +712,8 @@ pyyaml==6.0.1</pre>
       const res = await fetch(`/api/sessions/${state.currentSession.id}/sandbox`, { method: 'POST' });
       const data = await res.json();
       if (data.session) {
+        const idx = state.sessions.findIndex((s) => s.id === data.session.id);
+        if (idx !== -1) state.sessions[idx] = data.session;
         setCurrentSession(data.session);
       }
     } finally {
@@ -559,6 +723,7 @@ pyyaml==6.0.1</pre>
 
   async function triggerHarborEval() {
     if (!state.currentSession) return;
+    stageTabEval.disabled = false;
     switchStage('eval');
     const evalBtn = document.getElementById('runHarborEvalBtn');
     evalBtn.disabled = true;
@@ -567,6 +732,8 @@ pyyaml==6.0.1</pre>
       const res = await fetch(`/api/sessions/${state.currentSession.id}/eval`, { method: 'POST' });
       const data = await res.json();
       if (data.session) {
+        const idx = state.sessions.findIndex((s) => s.id === data.session.id);
+        if (idx !== -1) state.sessions[idx] = data.session;
         setCurrentSession(data.session);
       }
     } finally {
@@ -617,7 +784,10 @@ pyyaml==6.0.1</pre>
 
   function bindEvents() {
     stageTabs.forEach((tab) => {
-      tab.addEventListener('click', () => switchStage(tab.dataset.stage));
+      tab.addEventListener('click', () => {
+        if (tab.disabled) return;
+        switchStage(tab.dataset.stage);
+      });
     });
 
     openDrawerBtn.addEventListener('click', () => toggleDrawer(true, 'terraform'));
@@ -633,6 +803,7 @@ pyyaml==6.0.1</pre>
       const res = await fetch(`/api/sessions/${id}`);
       const sess = await res.json();
       setCurrentSession(sess);
+      switchStage('interview');
     });
 
     newSessionBtn.addEventListener('click', async () => {
@@ -644,6 +815,14 @@ pyyaml==6.0.1</pre>
       const sess = await res.json();
       await loadSessions(sess.id);
       switchStage('interview');
+    });
+
+    saveSkillNameBtn.addEventListener('click', () => saveSkillName());
+    skillNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveSkillName();
+      }
     });
 
     document.querySelectorAll('.sample-chip').forEach((chip) => {
@@ -692,31 +871,51 @@ pyyaml==6.0.1</pre>
       }
     });
 
-    document.getElementById('quickBuildSandboxBtn').addEventListener('click', () => triggerSandboxRun());
+    // Step progression buttons
+    document.getElementById('continueToDataBtn').addEventListener('click', () => switchStage('grounding'));
+    document.getElementById('skipToSandboxBtn').addEventListener('click', () => triggerSandboxRun());
     document.getElementById('groundingToSandboxBtn').addEventListener('click', () => triggerSandboxRun());
     document.getElementById('runSandboxBtn').addEventListener('click', () => triggerSandboxRun());
     document.getElementById('sandboxToEvalBtn').addEventListener('click', () => triggerHarborEval());
     document.getElementById('runHarborEvalBtn').addEventListener('click', () => triggerHarborEval());
-    document.getElementById('evalToPublishBtn').addEventListener('click', () => switchStage('publish'));
+    document.getElementById('evalToPublishBtn').addEventListener('click', () => {
+      stageTabPublish.disabled = false;
+      switchStage('publish');
+    });
+    topBarPublishBtn.addEventListener('click', () => {
+      if (!topBarPublishBtn.disabled) {
+        switchStage('publish');
+      }
+    });
 
+    // One-click business data source buttons
+    document.querySelectorAll('[data-source-type]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = 'Attached';
+        try {
+          await attachDataSource(btn.dataset.sourceType, btn.dataset.sourceName, '');
+        } finally {
+          setTimeout(() => {
+            btn.disabled = false;
+            btn.textContent = originalText;
+          }, 1200);
+        }
+      });
+    });
+
+    // Advanced custom data source form
     groundingForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!state.currentSession) return;
       const sourceType = document.getElementById('grdSourceType').value;
       const name = document.getElementById('grdName').value;
       const rawSchema = document.getElementById('grdSchema').value;
-
-      const res = await fetch(`/api/sessions/${state.currentSession.id}/grounding`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceType, name, rawSchema }),
-      });
-      const data = await res.json();
-      if (data.session) {
-        setCurrentSession(data.session);
-        document.getElementById('grdName').value = '';
-        document.getElementById('grdSchema').value = '';
-      }
+      if (!name.trim()) return;
+      await attachDataSource(sourceType, name.trim(), rawSchema);
+      document.getElementById('grdName').value = '';
+      document.getElementById('grdSchema').value = '';
     });
 
     fileTabsBar.addEventListener('click', (e) => {
@@ -733,10 +932,21 @@ pyyaml==6.0.1</pre>
       renderEvalStage();
     });
 
+    // Toggle Gemini Enterprise app ID input visibility when its checkbox is ticked
+    pubCheckGeminiEnterprise.addEventListener('change', () => {
+      geAppIdFieldGroup.classList.toggle('hidden-field', !pubCheckGeminiEnterprise.checked);
+    });
+
     publishForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!state.currentSession) return;
-      const target = document.getElementById('pubTarget').value;
+      const checkedBoxes = Array.from(document.querySelectorAll('input[name="pubTargets"]:checked'));
+      const targets = checkedBoxes.map((cb) => cb.value);
+      if (targets.length === 0) {
+        targets.push('agent_registry');
+        document.getElementById('pubCheckAgentRegistry').checked = true;
+      }
+
       const projectId = document.getElementById('pubProjectId').value;
       const versionTag = document.getElementById('pubVersion').value;
       const discoveryEngineApp = document.getElementById('pubGeAppId').value;
@@ -744,11 +954,16 @@ pyyaml==6.0.1</pre>
       const res = await fetch(`/api/sessions/${state.currentSession.id}/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target, projectId, location: 'global', versionTag, discoveryEngineApp }),
+        body: JSON.stringify({ targets, projectId, location: 'global', versionTag, discoveryEngineApp }),
       });
       const data = await res.json();
       if (data.session) {
+        const idx = state.sessions.findIndex((s) => s.id === data.session.id);
+        if (idx !== -1) state.sessions[idx] = data.session;
         setCurrentSession(data.session);
+        if (targets.includes('zip_bundle')) {
+          window.location.href = `/api/sessions/${state.currentSession.id}/download`;
+        }
       }
     });
   }

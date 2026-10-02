@@ -1,5 +1,4 @@
-// Enterprise Skill Builder Interactive Workbench Client
-// Enforces stitch-design-taste, web-app-development, and product-taste rules
+// Skill Builder Frontend Client (Pantheon Left-Nav + Progressive Disclosure)
 (function () {
   const state = {
     sessions: [],
@@ -12,23 +11,30 @@
     recognition: null,
   };
 
-  // DOM Elements
+  const stageTitles = {
+    interview: 'Create skill',
+    grounding: 'Data sources',
+    sandbox: 'Sandbox test',
+    eval: 'Evaluations',
+    publish: 'Publish',
+  };
+
+  // DOM References
   const sessionSelect = document.getElementById('sessionSelect');
   const newSessionBtn = document.getElementById('newSessionBtn');
   const iapEmailText = document.getElementById('iapEmailText');
-  const stageTabs = document.querySelectorAll('.pipeline-step');
+  const activePageHeading = document.getElementById('activePageHeading');
+  const stageTabs = document.querySelectorAll('.cfc-nav-item');
   const stagePanels = document.querySelectorAll('.stage-view');
 
   const chatTranscript = document.getElementById('chatTranscript');
   const chatInput = document.getElementById('chatInput');
   const sendChatBtn = document.getElementById('sendChatBtn');
   const voiceToggleBtn = document.getElementById('voiceToggleBtn');
-  const voiceBtnLabel = document.getElementById('voiceBtnLabel');
   const voiceWaveformBar = document.getElementById('voiceWaveformBar');
   const voiceStatusText = document.getElementById('voiceStatusText');
 
   const bpReadinessBadge = document.getElementById('bpReadinessBadge');
-  const bpProgressBar = document.getElementById('bpProgressBar');
   const blueprintCanvasContent = document.getElementById('blueprintCanvasContent');
 
   const groundingForm = document.getElementById('groundingForm');
@@ -40,6 +46,7 @@
   const fileTabsBar = document.getElementById('fileTabsBar');
   const fileViewerContent = document.getElementById('fileViewerContent');
   const downloadBundleBtnSandbox = document.getElementById('downloadBundleBtnSandbox');
+  const navDownloadZipLink = document.getElementById('navDownloadZipLink');
 
   const evalKpiGrid = document.getElementById('evalKpiGrid');
   const harborTrialsList = document.getElementById('harborTrialsList');
@@ -51,7 +58,6 @@
   const downloadZipDirectBtn = document.getElementById('downloadZipDirectBtn');
 
   const openDrawerBtn = document.getElementById('openDrawerBtn');
-  const openTerraformDrawerFromPublishBtn = document.getElementById('openTerraformDrawerFromPublishBtn');
   const closeDrawerBtn = document.getElementById('closeDrawerBtn');
   const drawerBackdrop = document.getElementById('drawerBackdrop');
   const referenceDrawer = document.getElementById('referenceDrawer');
@@ -59,22 +65,19 @@
 
   const drawerContentMap = {
     terraform: `
-      <div class="ledger-group" style="padding: 0 0 14px 0;">
-        <div class="ledger-heading">1. Admin Role Prerequisites (One-Time Setup)</div>
-        <p class="ledger-row-desc" style="margin-bottom: 8px;">
-          The administrator deploying the platform into a GCP project (or Argolis environment) needs two IAM roles:
+      <div class="ledger-section" style="padding: 0 0 14px 0;">
+        <div class="ledger-label">Admin prerequisites</div>
+        <p class="ledger-row-sub" style="margin-bottom: 8px;">
+          To deploy this portal into a Google Cloud project with Terraform, the administrator needs:
         </p>
-        <ul class="ledger-list">
-          <li><code>roles/editor</code> (Project Editor to enable APIs and provision Cloud Run, Cloud Build, Artifact Registry, VPC, and GCS)</li>
-          <li><code>roles/resourcemanager.projectIamAdmin</code> + <code>roles/iap.admin</code> (to create dedicated Service Accounts and bind IAP access for business users)</li>
+        <ul class="ledger-items">
+          <li><code>roles/editor</code> (Project Editor)</li>
+          <li><code>roles/resourcemanager.projectIamAdmin</code> and <code>roles/iap.admin</code></li>
         </ul>
       </div>
-      <div class="ledger-group" style="padding: 14px 0 0 0;">
-        <div class="ledger-heading">2. Three-Command Automated Build &amp; Deploy</div>
-        <p class="ledger-row-desc" style="margin-bottom: 8px;">
-          Terraform automatically creates the Artifact Registry repository, triggers Cloud Build for both containers, provisions <code>skill-builder-web-sa</code> and <code>skill-builder-sandbox-sa</code>, and outputs the IAP-protected portal URL:
-        </p>
-        <pre class="code-surface" style="max-height: 320px;">git clone https://github.com/mkarimawan/enterprise-skill-builder.git
+      <div class="ledger-section" style="padding: 14px 0 0 0;">
+        <div class="ledger-label">Deploy with Terraform</div>
+        <pre class="code-viewer" style="max-height: 320px;">git clone https://github.com/mkarimawan/enterprise-skill-builder.git
 cd enterprise-skill-builder
 
 cat &lt;&lt;EOF &gt; terraform/terraform.tfvars
@@ -83,8 +86,7 @@ region     = "us-central1"
 enable_iap = true
 
 iap_allowed_members = [
-  "user:admin@yourcompany.com",
-  "group:business-skill-builders@yourcompany.com"
+  "user:admin@yourcompany.com"
 ]
 EOF
 
@@ -94,44 +96,24 @@ terraform -chdir=terraform apply</pre>
       </div>
     `,
     runtime: `
-      <div class="ledger-group" style="padding: 0;">
-        <div class="ledger-heading">Gemini Enterprise Python 3.11 Frozen Sandbox Parity</div>
-        <p class="ledger-row-desc" style="margin-bottom: 10px;">
-          Every skill compiled in the Cloud Run Gen2 gVisor sandbox is verified against <code>runtime/ge_frozen_requirements.txt</code> (mirroring <code>ge_skills_image</code>) so the exact same bundle executes across Gemini Enterprise Web (Dolphin), Gemini Enterprise Spark (Sobi/Obi VMaaS), and Antigravity 2.0:
+      <div class="ledger-section" style="padding: 0;">
+        <div class="ledger-label">Sandbox Python 3.11 environment</div>
+        <p class="ledger-row-sub" style="margin-bottom: 10px;">
+          Skills are tested inside an isolated Cloud Run Gen2 sandbox matching the Gemini Enterprise Python 3.11 package baseline (<code>runtime/ge_frozen_requirements.txt</code>).
         </p>
-        <pre class="code-surface" style="max-height: 360px;">Python 3.11.9 (Air-Gapped Sandbox Baseline)
-- numpy==1.26.4
-- pandas==2.2.2
-- pydantic==2.8.2
-- pyarrow==16.1.0
-- scikit-learn==1.5.1
-- scipy==1.14.0
-- statsmodels==0.14.2
-- openpyxl==3.1.5
-- pypdf==4.3.0
-- python-docx==1.1.2
-- python-pptx==0.6.23
-- reportlab==4.2.2
-- tabulate==0.9.0
-- pyyaml==6.0.1
-
-Note: Any additional pure-Python dependency is automatically vendored into scripts/lib/ during sandbox packaging.</pre>
-      </div>
-    `,
-    agy: `
-      <div class="ledger-group" style="padding: 0;">
-        <div class="ledger-heading">Headless Antigravity CLI (agy) Inside Cloud Run Gen2</div>
-        <p class="ledger-row-desc" style="margin-bottom: 10px;">
-          The isolated <code>skill-builder-sandbox</code> service runs under <code>skill-builder-sandbox-sa</code> with Application Default Credentials enabled (<code>AGY_ADC_AUTH=true</code>) and streams structured NDJSON events back to the portal:
-        </p>
-        <pre class="code-surface" style="max-height: 340px;">AGY_ADC_AUTH=true \\
-GOOGLE_CLOUD_QUOTA_PROJECT="\${PROJECT_ID}" \\
-agy \\
-  --input-format=stream-json \\
-  --output-format=stream-json \\
-  --dangerously-skip-permissions \\
-  --enable-terminal-sandbox \\
-  --workspace=/workspace/sandboxes/\${SESSION_ID}</pre>
+        <pre class="code-viewer" style="max-height: 320px;">numpy==1.26.4
+pandas==2.2.2
+pydantic==2.8.2
+pyarrow==16.1.0
+scikit-learn==1.5.1
+scipy==1.14.0
+openpyxl==3.1.5
+pypdf==4.3.0
+python-docx==1.1.2
+python-pptx==0.6.23
+reportlab==4.2.2
+tabulate==0.9.0
+pyyaml==6.0.1</pre>
       </div>
     `,
   };
@@ -165,14 +147,14 @@ agy \\
       const res = await fetch('/api/identity');
       const data = await res.json();
       if (data.identity && data.identity.email) {
-        iapEmailText.textContent = `${data.identity.email} (${data.identity.iapVerified ? 'IAP Verified' : 'ADC Session'})`;
+        iapEmailText.textContent = data.identity.email;
       }
       if (data.projectId) {
         const projInput = document.getElementById('pubProjectId');
         if (projInput) projInput.value = data.projectId;
       }
     } catch (_) {
-      iapEmailText.textContent = 'IAP Session Active';
+      iapEmailText.textContent = 'Signed in';
     }
   }
 
@@ -194,7 +176,7 @@ agy \\
     state.sessions.forEach((sess) => {
       const opt = document.createElement('option');
       opt.value = sess.id;
-      opt.textContent = `${sess.blueprint.displayName || sess.blueprint.name} (${sess.blueprint.readinessScore}% Ready)`;
+      opt.textContent = sess.blueprint.displayName || sess.blueprint.name || 'Untitled skill';
       if (selectedId && sess.id === selectedId) {
         opt.selected = true;
       }
@@ -208,6 +190,7 @@ agy \\
     const downloadUrl = `/api/sessions/${sess.id}/download`;
     downloadBundleBtnSandbox.href = downloadUrl;
     downloadZipDirectBtn.href = downloadUrl;
+    navDownloadZipLink.href = downloadUrl;
 
     renderInterviewAndBlueprint();
     renderGroundingStage();
@@ -218,6 +201,7 @@ agy \\
 
   function switchStage(stageName) {
     state.activeStage = stageName;
+    activePageHeading.textContent = stageTitles[stageName] || 'Skill Builder';
     stageTabs.forEach((tab) => {
       tab.classList.toggle('active', tab.dataset.stage === stageName);
     });
@@ -240,13 +224,12 @@ agy \\
       .replace(/\n/g, '<br/>');
   }
 
-  function renderSkeletonLoader(linesCount) {
-    const lines = [];
-    for (let i = 0; i < (linesCount || 3); i++) {
-      const widthClass = i % 2 === 0 ? 'w-95' : 'w-60';
-      lines.push(`<div class="skeleton-line ${widthClass}"></div>`);
+  function renderSkeletonLoader(count) {
+    const bars = [];
+    for (let i = 0; i < (count || 3); i++) {
+      bars.push(`<div class="skeleton-bar" style="width: ${i % 2 === 0 ? '90%' : '65%'};"></div>`);
     }
-    return `<div class="skeleton-stack">${lines.join('')}</div>`;
+    return `<div class="skeleton-stack">${bars.join('')}</div>`;
   }
 
   function renderInterviewAndBlueprint() {
@@ -255,15 +238,11 @@ agy \\
 
     chatTranscript.innerHTML = (sess.messages || [])
       .map((m) => {
-        const author = m.role === 'user' ? 'Skill Author' : 'Skill Architect (Gemini 3.6 Flash)';
-        const modality = m.modality === 'voice' ? 'VOICE STREAM' : 'TEXT TURN';
+        const sender = m.role === 'user' ? 'You' : 'Assistant';
         return `
-          <div class="turn-row ${escapeHtml(m.role)}">
-            <div class="turn-header">
-              <span class="turn-author">${escapeHtml(author)}</span>
-              <span class="tabular-nums">${escapeHtml(modality)}</span>
-            </div>
-            <div class="turn-body">${formatSimpleMarkdown(m.content)}</div>
+          <div class="msg-row ${escapeHtml(m.role)}">
+            <div class="msg-sender">${escapeHtml(sender)}</div>
+            <div class="msg-text">${formatSimpleMarkdown(m.content)}</div>
           </div>
         `;
       })
@@ -271,52 +250,55 @@ agy \\
     chatTranscript.scrollTop = chatTranscript.scrollHeight;
 
     const bp = sess.blueprint || {};
-    const score = bp.readinessScore || 0;
-    bpReadinessBadge.textContent = `${score}%`;
-    bpProgressBar.style.width = `${score}%`;
+    const hasBlueprint = Boolean(bp.name && bp.readinessScore > 0);
 
-    const platforms = (bp.targetPlatforms || [])
-      .map((p) => `<span class="runtime-tag">${escapeHtml(p)}</span>`)
-      .join('');
-    const useWhen = (bp.useWhenTriggers || []).map((t) => `<li>${escapeHtml(t)}</li>`).join('') || '<li>Describe when the agent should trigger this skill...</li>';
-    const doNotUse = (bp.doNotUseTriggers || []).map((t) => `<li>${escapeHtml(t)}</li>`).join('') || '<li>Describe out-of-scope or destructive actions to block...</li>';
+    if (!hasBlueprint) {
+      bpReadinessBadge.textContent = 'Empty';
+      bpReadinessBadge.className = 'status-badge status-neutral tabular-nums';
+      blueprintCanvasContent.innerHTML = `
+        <div class="cfc-empty-state">
+          <div class="empty-state-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+          </div>
+          <div class="empty-state-title">No skill blueprint yet</div>
+          <p class="empty-state-desc">Describe what you want your skill to do on the left, or pick a sample prompt below the text box.</p>
+        </div>
+      `;
+      return;
+    }
+
+    bpReadinessBadge.textContent = `${bp.readinessScore}% ready`;
+    bpReadinessBadge.className = 'status-badge status-pass tabular-nums';
+
+    const useWhen = (bp.useWhenTriggers || []).map((t) => `<li>${escapeHtml(t)}</li>`).join('');
     const params = (bp.inputParameters || [])
-      .map((p) => `<li><code>${escapeHtml(p.flag)}</code> (${escapeHtml(p.type)}, ${p.required ? 'required' : 'optional'}): ${escapeHtml(p.description)}</li>`)
-      .join('') || '<li>No CLI parameters defined yet.</li>';
-    const scripts = (bp.scripts || [])
-      .map((s) => `<li><code>${escapeHtml(s.filename)}</code>: ${escapeHtml(s.purpose)}<br/><span class="field-hint">Output Contract: ${escapeHtml(s.outputContract)}</span></li>`)
-      .join('') || '<li>Pending deterministic script specification...</li>';
-    const guardrails = (bp.guardrailsGotchas || []).map((g) => `<li>${escapeHtml(g)}</li>`).join('') || '<li>Enforce air-gapped Python 3.11 frozen GE runtime parity.</li>';
+      .map((p) => `<li><code>${escapeHtml(p.flag)}</code>: ${escapeHtml(p.description)}</li>`)
+      .join('');
+    const guardrails = (bp.guardrailsGotchas || []).map((g) => `<li>${escapeHtml(g)}</li>`).join('');
 
     blueprintCanvasContent.innerHTML = `
-      <div class="ledger-group">
-        <div class="ledger-heading">Skill Identifier &amp; Target Runtimes</div>
-        <div style="font-weight: 700; font-size: 14px; color: var(--ink-charcoal);">
-          <code>${escapeHtml(bp.name)}</code> - ${escapeHtml(bp.displayName)}
-        </div>
-        <p class="ledger-row-desc" style="margin-top: 4px;">${escapeHtml(bp.summary)}</p>
-        <div class="runtime-tag-row">${platforms}</div>
+      <div class="ledger-section">
+        <div class="ledger-label">Skill name</div>
+        <div style="font-weight: 600; font-size: 14px;"><code>${escapeHtml(bp.name)}</code></div>
+        <p class="ledger-row-sub" style="margin-top: 4px;">${escapeHtml(bp.summary)}</p>
       </div>
 
-      <div class="ledger-group">
-        <div class="ledger-heading">Positive Routing Triggers (&lt;use_when&gt;)</div>
-        <ul class="ledger-list">${useWhen}</ul>
+      <div class="ledger-section">
+        <div class="ledger-label">When to use</div>
+        <ul class="ledger-items">${useWhen}</ul>
       </div>
 
-      <div class="ledger-group">
-        <div class="ledger-heading">Negative Scope Guardrails (&lt;do_not_use_for&gt;)</div>
-        <ul class="ledger-list">${doNotUse}</ul>
+      <div class="ledger-section">
+        <div class="ledger-label">Inputs</div>
+        <ul class="ledger-items">${params}</ul>
       </div>
 
-      <div class="ledger-group">
-        <div class="ledger-heading">Deterministic Python 3.11 Scripts &amp; CLI Flags</div>
-        <ul class="ledger-list" style="margin-bottom: 8px;">${scripts}</ul>
-        <ul class="ledger-list">${params}</ul>
-      </div>
-
-      <div class="ledger-group">
-        <div class="ledger-heading">Operational Guardrails &amp; Edge-Case Gotchas</div>
-        <ul class="ledger-list">${guardrails}</ul>
+      <div class="ledger-section">
+        <div class="ledger-label">Guardrails</div>
+        <ul class="ledger-items">${guardrails}</ul>
       </div>
     `;
   }
@@ -328,12 +310,12 @@ agy \\
 
     if (assets.length === 0) {
       groundingAssetsList.innerHTML = `
-        <div class="ledger-row">
-          <div class="ledger-row-title">No enterprise grounding schemas attached yet</div>
-          <div class="ledger-row-desc">Submit a BigQuery DDL, OpenAPI specification, or MCP server definition above to synthesize a deterministic sandbox fixture.</div>
+        <div class="cfc-empty-state">
+          <div class="empty-state-title">No data sources attached</div>
+          <p class="empty-state-desc">Attach a table schema or API specification above to generate test data.</p>
         </div>
       `;
-      fixturePreviewCode.textContent = '// Attach a grounding source to synthesize tests/fixtures/mock_payload.json';
+      fixturePreviewCode.textContent = '// Attach a data source on the left to preview generated test data';
       return;
     }
 
@@ -341,12 +323,11 @@ agy \\
       .map(
         (a) => `
         <div class="ledger-row">
-          <div class="ledger-row-top">
+          <div class="ledger-row-header">
             <span class="ledger-row-title"><code>${escapeHtml(a.name)}</code></span>
-            <span class="status-tag status-neutral">${escapeHtml(a.sourceType.toUpperCase())}</span>
+            <span class="status-badge status-neutral">${escapeHtml(a.sourceType)}</span>
           </div>
-          <div class="ledger-row-desc">${escapeHtml(a.summary)}</div>
-          <pre class="inline-cmd-snippet">${escapeHtml(a.rawSchemaSnippet)}</pre>
+          <div class="ledger-row-sub">${escapeHtml(a.summary)}</div>
         </div>
       `
       )
@@ -362,23 +343,23 @@ agy \\
     const events = sess.agyEvents || [];
     if (events.length === 0) {
       agyEventStream.innerHTML = `
-        <div class="ledger-row">
-          <div class="ledger-row-title">Sandbox build ready</div>
-          <div class="ledger-row-desc">Click "Re-Run AGY Build &amp; Self-Heal" to compile SKILL.md and execute the Python 3.11 script inside the sandbox.</div>
+        <div class="cfc-empty-state">
+          <div class="empty-state-title">Sandbox not run yet</div>
+          <p class="empty-state-desc">Click "Run test" to build the skill files and test them in the isolated Python 3.11 sandbox.</p>
         </div>
       `;
     } else {
       agyEventStream.innerHTML = events
         .map((ev) => {
-          const statusClass = ev.type === 'self_heal' ? 'status-warn' : ev.type === 'done' || ev.type === 'security_scan' ? 'status-pass' : 'status-neutral';
+          const badge = ev.type === 'self_heal' ? 'status-warn' : ev.type === 'done' || ev.type === 'security_scan' ? 'status-pass' : 'status-neutral';
           return `
             <div class="ledger-row">
-              <div class="ledger-row-top">
-                <span class="ledger-row-title"><span class="tabular-nums">0${ev.step}</span>. ${escapeHtml(ev.title)}</span>
-                <span class="status-tag ${statusClass}">${escapeHtml(ev.type.toUpperCase())} (${escapeHtml(ev.duration || '0ms')})</span>
+              <div class="ledger-row-header">
+                <span class="ledger-row-title">${escapeHtml(ev.title)}</span>
+                <span class="status-badge ${badge}">${escapeHtml(ev.duration || '0ms')}</span>
               </div>
-              <div class="ledger-row-desc">${escapeHtml(ev.detail)}</div>
-              ${ev.command ? `<pre class="inline-cmd-snippet">$ ${escapeHtml(ev.command)}</pre>` : ''}
+              <div class="ledger-row-sub">${escapeHtml(ev.detail)}</div>
+              ${ev.command ? `<pre class="cmd-snippet">$ ${escapeHtml(ev.command)}</pre>` : ''}
             </div>
           `;
         })
@@ -389,20 +370,20 @@ agy \\
     if (sec && sec.checks) {
       securityChecksList.innerHTML = sec.checks
         .map((c) => {
-          const statusClass = c.status === 'PASS' ? 'status-pass' : c.status === 'HEALED' ? 'status-warn' : 'status-neutral';
+          const badge = c.status === 'PASS' ? 'status-pass' : 'status-warn';
           return `
             <div class="ledger-row">
-              <div class="ledger-row-top">
-                <span class="ledger-row-title"><code>${escapeHtml(c.id)}</code> ${escapeHtml(c.category)}</span>
-                <span class="status-tag ${statusClass}">${escapeHtml(c.status)}</span>
+              <div class="ledger-row-header">
+                <span class="ledger-row-title">${escapeHtml(c.category)}</span>
+                <span class="status-badge ${badge}">${escapeHtml(c.status)}</span>
               </div>
-              <div class="ledger-row-desc">${escapeHtml(c.detail)}</div>
+              <div class="ledger-row-sub">${escapeHtml(c.detail)}</div>
             </div>
           `;
         })
         .join('');
     } else {
-      securityChecksList.innerHTML = `<div class="ledger-row"><div class="ledger-row-desc">Pending sandbox AST scan...</div></div>`;
+      securityChecksList.innerHTML = '';
     }
 
     const files = sess.generatedFiles || {};
@@ -423,7 +404,7 @@ agy \\
       fileViewerContent.textContent = files[state.selectedBundleFile] || '';
     } else {
       fileTabsBar.innerHTML = '';
-      fileViewerContent.textContent = '// Run the sandbox build to inspect SKILL.md and Python 3.11 scripts';
+      fileViewerContent.textContent = '// Run the sandbox test to generate SKILL.md and Python scripts';
     }
   }
 
@@ -433,44 +414,42 @@ agy \\
     const rep = sess.harborReport;
 
     if (!rep) {
-      evalKpiGrid.innerHTML = `
-        <div class="kpi-cell">
-          <span class="kpi-metric-label">Evaluation Status</span>
-          <span class="kpi-metric-value">Ready</span>
-          <span class="kpi-metric-delta">Click "Re-Run Harbor Evaluation Suite" above</span>
+      evalKpiGrid.innerHTML = '';
+      harborTrialsList.innerHTML = `
+        <div class="cfc-empty-state">
+          <div class="empty-state-title">No evaluation results yet</div>
+          <p class="empty-state-desc">Click "Run evaluation" to compare accuracy with and without the skill.</p>
         </div>
       `;
-      harborTrialsList.innerHTML = '';
       harborFileTabs.innerHTML = '';
-      harborFileViewer.textContent = '// Run SkillsBench + Harbor evaluation to inspect task.toml, solve.sh, and test_outputs.py';
+      harborFileViewer.textContent = '// Run evaluation to generate benchmark files';
       return;
     }
 
     const basePct = Math.round((rep.baselinePassRate || 0) * 100);
     const skillPct = Math.round((rep.withSkillPassRate || 0) * 100);
-    const gainPct = Math.round((rep.normalizedGain || 0) * 100);
     const tokenReduction = Math.round(((rep.avgTokensBaseline - rep.avgTokensWithSkill) / rep.avgTokensBaseline) * 100);
 
     evalKpiGrid.innerHTML = `
-      <div class="kpi-cell">
-        <span class="kpi-metric-label">With-Skill Pass Rate (Harbor)</span>
-        <span class="kpi-metric-value">${skillPct}%</span>
-        <span class="kpi-metric-delta">+${skillPct - basePct}% lift vs. No-Skill (${basePct}%)</span>
+      <div class="kpi-box">
+        <div class="kpi-label">Pass rate with skill</div>
+        <div class="kpi-value">${skillPct}%</div>
+        <div class="kpi-delta">+${skillPct - basePct}% vs. baseline (${basePct}%)</div>
       </div>
-      <div class="kpi-cell">
-        <span class="kpi-metric-label">SkillsBench Normalized Gain (g)</span>
-        <span class="kpi-metric-value">${rep.normalizedGain.toFixed(2)}</span>
-        <span class="kpi-metric-delta">${gainPct}% error ceiling reduction</span>
+      <div class="kpi-box">
+        <div class="kpi-label">Normalized gain</div>
+        <div class="kpi-value">${rep.normalizedGain.toFixed(2)}</div>
+        <div class="kpi-delta">SkillsBench score</div>
       </div>
-      <div class="kpi-cell">
-        <span class="kpi-metric-label">Harbor Verifier (/logs/verifier/reward.txt)</span>
-        <span class="kpi-metric-value">${escapeHtml(rep.rewardTxtValue)}</span>
-        <span class="kpi-metric-delta">Oracle verified (${rep.avgLatencyMsSkill}ms avg)</span>
+      <div class="kpi-box">
+        <div class="kpi-label">Verifier reward</div>
+        <div class="kpi-value">${escapeHtml(rep.rewardTxtValue)}</div>
+        <div class="kpi-delta">Avg latency ${rep.avgLatencyMsSkill}ms</div>
       </div>
-      <div class="kpi-cell">
-        <span class="kpi-metric-label">Token Efficiency Delta</span>
-        <span class="kpi-metric-value">-${tokenReduction}%</span>
-        <span class="kpi-metric-delta">${rep.avgTokensWithSkill} vs. ${rep.avgTokensBaseline} baseline tokens</span>
+      <div class="kpi-box">
+        <div class="kpi-label">Token reduction</div>
+        <div class="kpi-value">-${tokenReduction}%</div>
+        <div class="kpi-delta">${rep.avgTokensWithSkill} vs. ${rep.avgTokensBaseline} tokens</div>
       </div>
     `;
 
@@ -478,13 +457,13 @@ agy \\
       .map(
         (t) => `
         <div class="ledger-row">
-          <div class="ledger-row-top">
-            <span class="ledger-row-title"><code>${escapeHtml(t.taskId)}</code> ${escapeHtml(t.taskTitle)}</span>
-            <span class="status-tag status-pass">Base: ${t.baselineReward.toFixed(1)} | Skill: ${t.withSkillReward.toFixed(1)}</span>
+          <div class="ledger-row-header">
+            <span class="ledger-row-title">${escapeHtml(t.taskTitle)}</span>
+            <span class="status-badge status-pass">Passed (${t.withSkillReward.toFixed(1)})</span>
           </div>
-          <div class="ledger-row-desc" style="margin-bottom: 4px;">Prompt: ${escapeHtml(t.prompt)}</div>
-          <div class="ledger-row-desc" style="color: var(--status-fail-ink);"><strong>No-Skill Baseline:</strong> ${escapeHtml(t.baselineFailure)}</div>
-          <div class="ledger-row-desc" style="color: var(--status-pass-ink);"><strong>With-Skill Result:</strong> ${escapeHtml(t.WithSkillOutput || t.withSkillOutput)}</div>
+          <div class="ledger-row-sub">${escapeHtml(t.prompt)}</div>
+          <div class="ledger-row-sub" style="color: var(--status-fail-ink);">Without skill: ${escapeHtml(t.baselineFailure)}</div>
+          <div class="ledger-row-sub" style="color: var(--status-pass-ink);">With skill: ${escapeHtml(t.WithSkillOutput || t.withSkillOutput)}</div>
         </div>
       `
       )
@@ -516,9 +495,9 @@ agy \\
 
     if (history.length === 0) {
       publishReceiptsList.innerHTML = `
-        <div class="ledger-row">
-          <div class="ledger-row-title">Ready for registration</div>
-          <div class="ledger-row-desc">Select your target registry on the left and click "Register &amp; Mount Skill Now" to generate immutable registration receipts and CLI commands.</div>
+        <div class="cfc-empty-state">
+          <div class="empty-state-title">Not published yet</div>
+          <p class="empty-state-desc">Choose a destination on the left and click "Publish skill" to register or download the bundle.</p>
         </div>
       `;
       return;
@@ -528,14 +507,12 @@ agy \\
       .map(
         (r) => `
         <div class="ledger-row">
-          <div class="ledger-row-top">
+          <div class="ledger-row-header">
             <span class="ledger-row-title">${escapeHtml(r.target)}</span>
-            <span class="status-tag status-pass">${escapeHtml(r.status)}</span>
+            <span class="status-badge status-pass">${escapeHtml(r.status)}</span>
           </div>
-          <div class="ledger-row-desc tabular-nums">
-            URI: <code>${escapeHtml(r.resourceUri)}</code> | SHA-256: <code>${escapeHtml(r.sha256Digest.slice(0, 16))}...</code> (${r.bundleSizeKb} KB)
-          </div>
-          <pre class="inline-cmd-snippet">$ ${escapeHtml(r.cliCommand)}</pre>
+          <div class="ledger-row-sub tabular-nums"><code>${escapeHtml(r.resourceUri)}</code> (${r.bundleSizeKb} KB)</div>
+          <pre class="cmd-snippet">$ ${escapeHtml(r.cliCommand)}</pre>
         </div>
       `
       )
@@ -545,7 +522,7 @@ agy \\
   async function sendInterviewTurn(messageText, modality) {
     if (!state.currentSession || !messageText.trim()) return;
     sendChatBtn.disabled = true;
-    blueprintCanvasContent.innerHTML = renderSkeletonLoader(4);
+    blueprintCanvasContent.innerHTML = renderSkeletonLoader(3);
     try {
       const res = await fetch(`/api/sessions/${state.currentSession.id}/interview`, {
         method: 'POST',
@@ -568,7 +545,7 @@ agy \\
     switchStage('sandbox');
     const runBtn = document.getElementById('runSandboxBtn');
     runBtn.disabled = true;
-    agyEventStream.innerHTML = renderSkeletonLoader(5);
+    agyEventStream.innerHTML = renderSkeletonLoader(4);
     try {
       const res = await fetch(`/api/sessions/${state.currentSession.id}/sandbox`, { method: 'POST' });
       const data = await res.json();
@@ -585,7 +562,7 @@ agy \\
     switchStage('eval');
     const evalBtn = document.getElementById('runHarborEvalBtn');
     evalBtn.disabled = true;
-    harborTrialsList.innerHTML = renderSkeletonLoader(4);
+    harborTrialsList.innerHTML = renderSkeletonLoader(3);
     try {
       const res = await fetch(`/api/sessions/${state.currentSession.id}/eval`, { method: 'POST' });
       const data = await res.json();
@@ -630,7 +607,6 @@ agy \\
   function stopVoiceRecording() {
     state.isRecordingVoice = false;
     voiceToggleBtn.classList.remove('recording');
-    voiceBtnLabel.textContent = 'Voice Input';
     voiceWaveformBar.classList.add('hidden');
     if (state.recognition) {
       try {
@@ -645,7 +621,6 @@ agy \\
     });
 
     openDrawerBtn.addEventListener('click', () => toggleDrawer(true, 'terraform'));
-    openTerraformDrawerFromPublishBtn.addEventListener('click', () => toggleDrawer(true, 'terraform'));
     closeDrawerBtn.addEventListener('click', () => toggleDrawer(false));
     drawerBackdrop.addEventListener('click', () => toggleDrawer(false));
 
@@ -671,10 +646,9 @@ agy \\
       switchStage('interview');
     });
 
-    document.querySelectorAll('.template-trigger').forEach((chip) => {
+    document.querySelectorAll('.sample-chip').forEach((chip) => {
       chip.addEventListener('click', async () => {
-        const presetText = chip.dataset.preset;
-        await sendInterviewTurn(presetText, 'voice');
+        await sendInterviewTurn(chip.dataset.preset, 'text');
       });
     });
 
@@ -685,7 +659,7 @@ agy \\
     });
 
     chatInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter') {
         e.preventDefault();
         const text = chatInput.value;
         chatInput.value = '';
@@ -700,26 +674,24 @@ agy \\
       }
       state.isRecordingVoice = true;
       voiceToggleBtn.classList.add('recording');
-      voiceBtnLabel.textContent = 'Stop Voice';
       voiceWaveformBar.classList.remove('hidden');
 
       if (state.recognition) {
-        voiceStatusText.textContent = 'Listening via Live Microphone (speak your skill requirements)...';
+        voiceStatusText.textContent = 'Listening... speak your skill requirements';
         state.recognition.start();
       } else {
-        voiceStatusText.textContent = 'Streaming Live Voice Turn (Gemini 3.6 Flash)...';
+        voiceStatusText.textContent = 'Listening...';
         setTimeout(() => {
           if (!state.isRecordingVoice) return;
           stopVoiceRecording();
           sendInterviewTurn(
-            'Enforce a strict 2.5 sigma anomaly threshold, $250 minimum daily delta, and verify cost_center and owner governance labels on every record.',
+            'Check our daily BigQuery billing export for cost spikes over 2.5 sigma and flag missing cost_center and owner labels.',
             'voice'
           );
-        }, 1600);
+        }, 1400);
       }
     });
 
-    document.getElementById('goToGroundingBtn').addEventListener('click', () => switchStage('grounding'));
     document.getElementById('quickBuildSandboxBtn').addEventListener('click', () => triggerSandboxRun());
     document.getElementById('groundingToSandboxBtn').addEventListener('click', () => triggerSandboxRun());
     document.getElementById('runSandboxBtn').addEventListener('click', () => triggerSandboxRun());

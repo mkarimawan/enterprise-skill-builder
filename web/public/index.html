@@ -96,9 +96,18 @@
 
       <!-- Central Page Workspace -->
       <div class="central-page">
-        <!-- Pantheon Contextual Action Bar -->
+        <!-- Pantheon Contextual Action Bar with Inline Editable Skill Name -->
         <div class="cfc-action-bar">
-          <h2 id="activePageHeading" class="action-bar-title">Create skill</h2>
+          <div class="inline-title-group">
+            <input id="skillNameInput" class="inline-title-input" type="text" value="Untitled skill" aria-label="Skill name" title="Click to rename skill" />
+            <button id="editSkillNamePencilBtn" class="btn-pencil" type="button" title="Rename skill" aria-label="Rename skill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+            </button>
+            <span id="saveNameFeedback" class="save-feedback">Saved</span>
+          </div>
           <div id="actionBarButtons" class="action-bar-controls">
             <button id="topBarPublishBtn" class="btn btn-primary btn-sm" type="button" disabled title="Complete sandbox test and evaluations to enable publishing">Publish skill</button>
           </div>
@@ -142,7 +151,7 @@
                 </div>
               </div>
 
-              <!-- Right: Editable Skill Name + Live Skill Summary -->
+              <!-- Right: Live Skill Summary (No Name Input Box Here) -->
               <div class="cfc-panel">
                 <div class="panel-header">
                   <h3 class="panel-title">Skill summary</h3>
@@ -150,16 +159,6 @@
                 </div>
                 <div class="panel-subtitle">
                   As you describe your goal on the left, this summary captures what the skill does, when Gemini should use it, the inputs it needs, and its safety rules.
-                </div>
-
-                <!-- Editable Skill Name Bar -->
-                <div class="skill-name-bar">
-                  <label class="field-label" for="skillNameInput">Skill name</label>
-                  <div class="skill-name-controls">
-                    <input id="skillNameInput" class="input-field" type="text" placeholder="e.g., Weekly billing cost check" />
-                    <button id="saveSkillNameBtn" class="btn btn-secondary btn-sm" type="button">Save name</button>
-                    <span id="saveNameFeedback" class="save-feedback">Saved</span>
-                  </div>
                 </div>
 
                 <div id="blueprintCanvasContent"></div>

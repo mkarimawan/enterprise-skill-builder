@@ -23,7 +23,6 @@
   const sessionSelect = document.getElementById('sessionSelect');
   const newSessionBtn = document.getElementById('newSessionBtn');
   const iapEmailText = document.getElementById('iapEmailText');
-  const activePageHeading = document.getElementById('activePageHeading');
   const topBarPublishBtn = document.getElementById('topBarPublishBtn');
 
   const stageTabs = document.querySelectorAll('.cfc-nav-item');
@@ -37,7 +36,7 @@
   const voiceStatusText = document.getElementById('voiceStatusText');
 
   const skillNameInput = document.getElementById('skillNameInput');
-  const saveSkillNameBtn = document.getElementById('saveSkillNameBtn');
+  const editSkillNamePencilBtn = document.getElementById('editSkillNamePencilBtn');
   const saveNameFeedback = document.getElementById('saveNameFeedback');
   const bpReadinessBadge = document.getElementById('bpReadinessBadge');
   const blueprintCanvasContent = document.getElementById('blueprintCanvasContent');
@@ -248,7 +247,6 @@ pyyaml==6.0.1</pre>
 
   function switchStage(stageName) {
     state.activeStage = stageName;
-    activePageHeading.textContent = stageTitles[stageName] || 'Skill Builder';
     stageTabs.forEach((tab) => {
       tab.classList.toggle('active', tab.dataset.stage === stageName);
     });
@@ -297,8 +295,7 @@ pyyaml==6.0.1</pre>
     chatTranscript.scrollTop = chatTranscript.scrollHeight;
 
     const bp = sess.blueprint || {};
-    const displayTitle = bp.displayName && bp.displayName !== 'Untitled skill' ? bp.displayName : '';
-    skillNameInput.value = displayTitle;
+    skillNameInput.value = bp.displayName || bp.name || 'Untitled skill';
 
     const hasBlueprint = Boolean(bp.readinessScore > 0);
 
@@ -574,27 +571,26 @@ pyyaml==6.0.1</pre>
   async function saveSkillName() {
     if (!state.currentSession) return;
     const newName = skillNameInput.value.trim();
-    if (!newName) return;
+    if (!newName) {
+      skillNameInput.value = state.currentSession.blueprint.displayName || 'Untitled skill';
+      return;
+    }
+    if (newName === state.currentSession.blueprint.displayName) return;
 
-    saveSkillNameBtn.disabled = true;
-    try {
-      const res = await fetch(`/api/sessions/${state.currentSession.id}/rename`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName: newName }),
-      });
-      const data = await res.json();
-      if (data.session) {
-        state.currentSession = data.session;
-        const idx = state.sessions.findIndex((s) => s.id === data.session.id);
-        if (idx !== -1) state.sessions[idx] = data.session;
-        renderSessionSelector(state.currentSession.id);
-        renderInterviewAndBlueprint();
-        saveNameFeedback.classList.add('visible');
-        setTimeout(() => saveNameFeedback.classList.remove('visible'), 2000);
-      }
-    } finally {
-      saveSkillNameBtn.disabled = false;
+    const res = await fetch(`/api/sessions/${state.currentSession.id}/rename`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ displayName: newName }),
+    });
+    const data = await res.json();
+    if (data.session) {
+      state.currentSession = data.session;
+      const idx = state.sessions.findIndex((s) => s.id === data.session.id);
+      if (idx !== -1) state.sessions[idx] = data.session;
+      renderSessionSelector(state.currentSession.id);
+      renderInterviewAndBlueprint();
+      saveNameFeedback.classList.add('visible');
+      setTimeout(() => saveNameFeedback.classList.remove('visible'), 1800);
     }
   }
 
@@ -752,11 +748,22 @@ pyyaml==6.0.1</pre>
       switchStage('interview');
     });
 
-    saveSkillNameBtn.addEventListener('click', () => saveSkillName());
+    editSkillNamePencilBtn.addEventListener('click', () => {
+      skillNameInput.focus();
+      skillNameInput.select();
+    });
+
+    skillNameInput.addEventListener('focus', () => {
+      if (skillNameInput.value === 'Untitled skill') {
+        skillNameInput.select();
+      }
+    });
+
+    skillNameInput.addEventListener('blur', () => saveSkillName());
     skillNameInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        saveSkillName();
+        skillNameInput.blur();
       }
     });
 

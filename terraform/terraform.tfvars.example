@@ -1,0 +1,18 @@
+# Minimal Customer Configuration:
+# Terraform will automatically enable APIs, create Artifact Registry, build both container images
+# via Cloud Build, create least-privilege Service Accounts, and deploy the IAP-protected Web Portal
+# and the isolated Cloud Run Gen2 gVisor Sandbox Worker.
+
+project_id = "your-gcp-project-id"
+region     = "us-central1"
+enable_iap = true
+
+# Business users, Customer Engineers, or Google Groups allowed to open the Web Portal via IAP:
+iap_allowed_members = [
+  "user:admin@yourcompany.com",
+  "group:business-skill-builders@yourcompany.com"
+]
+
+# Optional: Gemini Enterprise (Spark / Sobi / Dolphin) App ID for one-click skill mounting
+discovery_engine_app_id   = ""
+discovery_engine_location = "global"

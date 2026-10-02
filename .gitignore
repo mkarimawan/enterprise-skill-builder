@@ -1,0 +1,11 @@
+.DS_Store
+/bin/
+/dist/
+/data/
+*.zip
+*.tar.gz
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+terraform/.terraform.lock.hcl

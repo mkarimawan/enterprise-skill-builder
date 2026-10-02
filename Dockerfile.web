@@ -1,0 +1,32 @@
+# Multi-stage Dockerfile for Enterprise Skill Builder Web App (Cloud Run + IAP)
+FROM golang:1.23-bookworm AS builder
+
+WORKDIR /workspace
+COPY go.mod ./
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/skill-builder-server ./cmd/server
+
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    git \
+    python3 \
+    python3-pip \
+    zip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /out/skill-builder-server /app/skill-builder-server
+COPY web/ /app/web/
+COPY runtime/ /app/runtime/
+
+ENV PORT=8080
+ENV WEB_STATIC_DIR=/app/web/public
+EXPOSE 8080
+
+USER 65532:65532
+ENTRYPOINT ["/app/skill-builder-server"]

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise Skill Builder | Gemini Enterprise (Spark / Sobi) &amp; Antigravity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Enterprise Header Bar -->
+    <header class="topbar">
+      <div class="brand-cluster">
+        <div class="brand-mark" aria-hidden="true">SB</div>
+        <div>
+          <div class="brand-title-row">
+            <h1 class="brand-title">Enterprise Skill Builder</h1>
+            <span class="badge badge-neutral">GE Spark / Sobi + Antigravity 2.0</span>
+          </div>
+          <p class="brand-subtitle">Deterministic Skill Factory on Cloud Run Gen2 gVisor, Headless AGY, and SkillsBench + Harbor</p>
+        </div>
+      </div>
+
+      <div class="topbar-controls">
+        <div class="session-selector-wrap">
+          <label for="sessionSelect" class="sr-only">Active Skill Session</label>
+          <select id="sessionSelect" class="select-control"></select>
+          <button id="newSessionBtn" class="btn btn-secondary btn-sm" type="button">+ New Skill</button>
+        </div>
+
+        <div class="iap-pill" id="iapIdentityBadge" title="Authenticated via Cloud Run Identity-Aware Proxy">
+          <span class="status-dot status-dot-green"></span>
+          <span id="iapEmailText">Authenticating IAP...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 5-Stage Pipeline Navigation Bar -->
+    <nav class="stage-nav" aria-label="Skill Lifecycle Stages">
+      <button class="stage-tab active" data-stage="interview" type="button">
+        <span class="stage-num">01</span>
+        <span class="stage-info">
+          <span class="stage-name">Voice &amp; Text Interview</span>
+          <span class="stage-meta">Gemini 3.6 Flash Live + Canvas</span>
+        </span>
+      </button>
+      <button class="stage-tab" data-stage="grounding" type="button">
+        <span class="stage-num">02</span>
+        <span class="stage-info">
+          <span class="stage-name">Enterprise Grounding</span>
+          <span class="stage-meta">BigQuery / OpenAPI / MCP Fixtures</span>
+        </span>
+      </button>
+      <button class="stage-tab" data-stage="sandbox" type="button">
+        <span class="stage-num">03</span>
+        <span class="stage-info">
+          <span class="stage-name">Cloud Run AGY Sandbox</span>
+          <span class="stage-meta">Python 3.11 Self-Heal &amp; AST Gate</span>
+        </span>
+      </button>
+      <button class="stage-tab" data-stage="eval" type="button">
+        <span class="stage-num">04</span>
+        <span class="stage-info">
+          <span class="stage-name">SkillsBench + Harbor Evals</span>
+          <span class="stage-meta">Paired Lift &amp; reward.txt Verifier</span>
+        </span>
+      </button>
+      <button class="stage-tab" data-stage="publish" type="button">
+        <span class="stage-num">05</span>
+        <span class="stage-info">
+          <span class="stage-name">Publish &amp; Terraform</span>
+          <span class="stage-meta">Agent Registry &amp; GE Spark Mount</span>
+        </span>
+      </button>
+    </nav>
+
+    <!-- Main Stage Content Area -->
+    <main class="workspace-main">
+      <!-- STAGE 1: VOICE & TEXT INTERVIEW + LIVE SKILL BLUEPRINT CANVAS -->
+      <section id="stage-interview" class="stage-panel active">
+        <div class="split-grid-interview">
+          <!-- Left Column: Voice & Text Interview Studio -->
+          <div class="panel-card interview-column">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Conversational Skill Architect Studio</h2>
+                <p class="panel-desc">Speak naturally or type to define your skill. The architect interviews you to eliminate ambiguity and build deterministic Python 3.11 scripts.</p>
+              </div>
+              <span class="badge badge-blue">gemini-3.6-flash</span>
+            </div>
+
+            <div class="preset-bar">
+              <span class="preset-label">Quick-Start Enterprise Templates:</span>
+              <button class="chip-btn" data-preset="We need a deterministic FinOps skill for Gemini Enterprise Spark and Antigravity that analyzes our BigQuery billing export, flags daily SKU spikes over 2.5 sigma and $250 delta, and audits cost_center and owner labels." type="button">FinOps Cost Anomaly</button>
+              <button class="chip-btn" data-preset="Build an SAP Order-to-Cash three-way invoice reconciliation skill for Gemini Enterprise Spark that matches POs, Goods Receipts, and Invoices with exact Decimal math and a 2.0% unit price tolerance." type="button">SAP 3-Way Match</button>
+              <button class="chip-btn" data-preset="Create a Cloud Run SRE latency and quota triage skill that inspects grounded MCP metrics and outputs deterministic traffic rollback commands." type="button">Cloud Run SRE Triage</button>
+            </div>
+
+            <div id="chatTranscript" class="chat-transcript" aria-live="polite"></div>
+
+            <!-- Voice + Text Composer -->
+            <div class="composer-box">
+              <div id="voiceWaveformBar" class="voice-status-bar hidden">
+                <div class="voice-bars">
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <span id="voiceStatusText">Listening via Live Voice Stream (speak your skill requirements)...</span>
+              </div>
+
+              <div class="composer-input-row">
+                <button id="voiceToggleBtn" class="btn btn-voice" type="button" title="Toggle Live Voice Interview">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                  </svg>
+                  <span id="voiceBtnLabel">Voice Interview</span>
+                </button>
+                <textarea id="chatInput" class="chat-textarea" rows="2" placeholder="Describe the enterprise skill you need, or answer the architect's clarifying questions..."></textarea>
+                <button id="sendChatBtn" class="btn btn-primary" type="button">Send Turn</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Live Skill Blueprint Canvas -->
+          <div class="panel-card blueprint-column">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Live Skill Blueprint Canvas</h2>
+                <p class="panel-desc">Real-time structured specification extracted from your conversation</p>
+              </div>
+              <div class="readiness-cluster">
+                <span class="readiness-label">Spec Readiness</span>
+                <span id="bpReadinessBadge" class="readiness-pill">98%</span>
+              </div>
+            </div>
+
+            <div class="progress-track">
+              <div id="bpProgressBar" class="progress-fill" style="width: 98%;"></div>
+            </div>
+
+            <div id="blueprintCanvasContent" class="blueprint-scroll"></div>
+
+            <div class="panel-footer-actions">
+              <button id="goToGroundingBtn" class="btn btn-secondary" type="button">Next: Attach Enterprise Schemas</button>
+              <button id="quickBuildSandboxBtn" class="btn btn-primary" type="button">Compile &amp; Self-Heal in Cloud Run Sandbox</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STAGE 2: ENTERPRISE SCHEMA & MCP GROUNDING -->
+      <section id="stage-grounding" class="stage-panel">
+        <div class="split-grid-equal">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Attach Enterprise Grounding Sources</h2>
+                <p class="panel-desc">Connect BigQuery table schemas, OpenAPI specs, or MCP tool registries. The sandbox automatically synthesizes deterministic mock fixtures so scripts are tested with zero production mutations.</p>
+              </div>
+            </div>
+
+            <form id="groundingForm" class="form-stack">
+              <div class="form-group">
+                <label class="form-label" for="grdSourceType">Grounding Source Type</label>
+                <select id="grdSourceType" class="select-control">
+                  <option value="bigquery">BigQuery Dataset / Table Schema (DDL / JSON)</option>
+                  <option value="openapi">OpenAPI 3.0 / Swagger Specification (SAP / REST)</option>
+                  <option value="mcp">Model Context Protocol (MCP) Server Tool Schema</option>
+                  <option value="runbook">Enterprise Operational Runbook / Policy Markdown</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="grdName">Resource URI or Identifier</label>
+                <input id="grdName" class="input-control" type="text" placeholder="e.g., bq://finops_prod.gcp_billing_export_v1 or openapi://sap-reconcile.yaml" />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="grdSchema">Schema Definition / DDL / Tool Contract (Optional - auto-introspects if blank)</label>
+                <textarea id="grdSchema" class="code-textarea" rows="6" placeholder="Paste table DDL, OpenAPI YAML snippet, or MCP tools/list JSON..."></textarea>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">+ Ground Schema &amp; Synthesize Mock Fixture</button>
+              </div>
+            </form>
+
+            <hr class="divider" />
+            <h3 class="section-subheading">Attached Grounding Assets</h3>
+            <div id="groundingAssetsList" class="asset-list"></div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Synthesized Deterministic Mock Fixture</h2>
+                <p class="panel-desc">Mounted at <code>tests/fixtures/mock_payload.json</code> inside the air-gapped Cloud Run Gen2 gVisor sandbox</p>
+              </div>
+              <span class="badge badge-green">Zero Prod Mutation</span>
+            </div>
+            <pre id="fixturePreviewCode" class="code-viewer"></pre>
+            <div class="panel-footer-actions">
+              <button id="groundingToSandboxBtn" class="btn btn-primary" type="button">Launch Cloud Run Gen2 Sandbox (AGY Build &amp; Self-Heal)</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STAGE 3: CLOUD RUN GEN2 GVISOR SANDBOX & HEADLESS AGY -->
+      <section id="stage-sandbox" class="stage-panel">
+        <div class="sandbox-top-banner">
+          <div>
+            <h2 class="panel-title">Cloud Run Gen2 gVisor Sandbox &amp; Headless Antigravity CLI (<code>agy</code>)</h2>
+            <p class="panel-desc">Executes <code>AGY_ADC_AUTH=true agy --input-format=stream-json --output-format=stream-json --dangerously-skip-permissions --enable-terminal-sandbox</code> inside the frozen Python 3.11 Gemini Enterprise runtime (<code>ge_skills_image</code>).</p>
+          </div>
+          <div class="banner-actions">
+            <button id="runSandboxBtn" class="btn btn-primary" type="button">Re-Run AGY Sandbox Build &amp; Self-Heal</button>
+            <button id="sandboxToEvalBtn" class="btn btn-secondary" type="button">Run SkillsBench + Harbor Evals</button>
+          </div>
+        </div>
+
+        <div class="split-grid-equal">
+          <!-- Left: Headless AGY Stream Trajectory & AST Security Audit -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title">Headless <code>agy</code> NDJSON Execution Stream &amp; Self-Healing</h3>
+              <span class="badge badge-green">EXECUTION_ENVIRONMENT_GEN2</span>
+            </div>
+            <div id="agyEventStream" class="event-stream"></div>
+
+            <hr class="divider" />
+            <div class="panel-header">
+              <h3 class="panel-title">GE Sandbox Security &amp; Frozen Dependency Audit</h3>
+              <span id="securityOverallBadge" class="badge badge-green">ALL CHECKS PASSED</span>
+            </div>
+            <div id="securityChecksList" class="security-list"></div>
+          </div>
+
+          <!-- Right: Generated Skill Bundle File Explorer -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Generated Universal Skill Bundle Explorer</h3>
+                <p class="panel-desc">Compatible with Gemini Enterprise Spark (Sobi/Obi), GE Web (Dolphin), and Antigravity 2.0</p>
+              </div>
+              <a id="downloadBundleBtnSandbox" class="btn btn-secondary btn-sm" href="#" download>Download .zip</a>
+            </div>
+            <div id="fileTabsBar" class="file-tabs-bar"></div>
+            <pre id="fileViewerContent" class="code-viewer code-viewer-tall"></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- STAGE 4: SKILLSBENCH + HARBOR EVALUATION SUITE -->
+      <section id="stage-eval" class="stage-panel">
+        <div class="sandbox-top-banner">
+          <div>
+            <h2 class="panel-title">SkillsBench + Harbor Paired Evaluation Suite</h2>
+            <p class="panel-desc">Quantifies deterministic skill lift by executing paired <strong>Baseline (No Skill)</strong> vs. <strong>Treatment (With Skill)</strong> trials in Harbor containers and verifying <code>/logs/verifier/reward.txt</code>.</p>
+          </div>
+          <div class="banner-actions">
+            <button id="runHarborEvalBtn" class="btn btn-primary" type="button">Run Paired SkillsBench + Harbor Suite</button>
+            <button id="evalToPublishBtn" class="btn btn-secondary" type="button">Proceed to Registry Publishing</button>
+          </div>
+        </div>
+
+        <!-- KPI Metric Strip -->
+        <div id="evalKpiGrid" class="kpi-grid"></div>
+
+        <div class="split-grid-equal">
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title">Paired Trial Comparison (No-Skill Baseline vs. With-Skill)</h3>
+              <span class="badge badge-blue">ATIF v1.6 Trajectory Verified</span>
+            </div>
+            <div id="harborTrialsList" class="trials-list"></div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title">Generated Harbor Benchmark Artifacts (<code>harbor_task/</code>)</h3>
+              <span class="badge badge-neutral">reward.txt = 1.0</span>
+            </div>
+            <div id="harborFileTabs" class="file-tabs-bar"></div>
+            <pre id="harborFileViewer" class="code-viewer code-viewer-tall"></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- STAGE 5: PUBLISH TO AGENT REGISTRY, GEMINI ENTERPRISE SPARK, & TERRAFORM -->
+      <section id="stage-publish" class="stage-panel">
+        <div class="split-grid-equal">
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Publish Verified Skill to Enterprise Registries</h2>
+                <p class="panel-desc">Register once so Gemini Enterprise Web (Dolphin), Gemini Enterprise Spark (Sobi/Obi), and Antigravity 2.0 agents can discover and invoke this skill.</p>
+              </div>
+            </div>
+
+            <form id="publishForm" class="form-stack">
+              <div class="form-group">
+                <label class="form-label" for="pubTarget">Registration Target</label>
+                <select id="pubTarget" class="select-control">
+                  <option value="all">All Targets (Agent Platform Registry + Gemini Enterprise Spark/Sobi + ZIP Bundle)</option>
+                  <option value="agent_registry">Google Cloud Agent Platform Skill Registry (cloudapiregistry.googleapis.com)</option>
+                  <option value="gemini_enterprise">Gemini Enterprise App (DiscoveryEngine AgentService.UploadAgentFile)</option>
+                  <option value="zip_bundle">Portable Universal Skill + Harbor Benchmark Bundle (.zip)</option>
+                </select>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label" for="pubProjectId">Target GCP Project ID</label>
+                  <input id="pubProjectId" class="input-control" type="text" value="enterprise-genai-prod" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="pubVersion">Semantic Version Tag</label>
+                  <input id="pubVersion" class="input-control" type="text" value="v1.0.0" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="pubGeAppId">Gemini Enterprise (Discovery Engine) App ID</label>
+                <input id="pubGeAppId" class="input-control" type="text" value="gemini-enterprise-spark-prod" />
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Register &amp; Mount Skill Now</button>
+                <a id="downloadZipDirectBtn" class="btn btn-secondary" href="#" download>Download Universal .zip Bundle</a>
+              </div>
+            </form>
+
+            <hr class="divider" />
+            <h3 class="section-subheading">Registration Receipts &amp; CLI Equivalent Commands</h3>
+            <div id="publishReceiptsList" class="receipts-list"></div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h2 class="panel-title">Customer Terraform Deployment Blueprint (Cloud Run + IAP)</h2>
+                <p class="panel-desc">Ready-to-apply infrastructure code in <code>terraform/</code> provisioning dedicated Service Accounts, IAP access bindings, and the isolated Gen2 gVisor Sandbox Worker.</p>
+              </div>
+              <span class="badge badge-green">Least-Privilege IAM</span>
+            </div>
+            <pre class="code-viewer code-viewer-tall"># 1. Configure customer Project ID and IAP allowed employee groups
+cat &lt;&lt;EOF &gt; terraform/terraform.tfvars
+project_id              = "customer-genai-prod"
+region                  = "us-central1"
+iap_allowed_members     = [
+  "group:ai-skill-builders@customer.com",
+  "user:lead-ce@customer.com"
+]
+web_container_image     = "us-central1-docker.pkg.dev/customer-genai-prod/skill-builder/skill-builder-web:latest"
+sandbox_container_image = "us-central1-docker.pkg.dev/customer-genai-prod/skill-builder/skill-builder-sandbox:latest"
+discovery_engine_app_id = "gemini-enterprise-spark-prod"
+EOF
+
+# 2. Provision Dedicated Service Accounts, IAP, VPC Lock, &amp; Cloud Run Gen2 Services
+terraform -chdir=terraform init
+terraform -chdir=terraform apply
+
+# Provisioned Resources:
+# - google_service_account.web_sa (skill-builder-web-sa)
+# - google_service_account.sandbox_sa (skill-builder-sandbox-sa with AGY_ADC_AUTH=true)
+# - google_cloud_run_v2_service.web_app (iap_enabled = true)
+# - google_iap_web_cloud_run_service_iam_member.iap_allowed_users (roles/iap.httpsResourceAccessor)
+# - google_cloud_run_v2_service.sandbox_worker (EXECUTION_ENVIRONMENT_GEN2 + Direct VPC Egress lock)</pre>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+# Dockerfile for the Isolated Cloud Run Gen2 gVisor Sandbox Worker
+# Includes:
+# 1. Exact Python 3.11 + Gemini Enterprise frozen package baseline (ge_frozen_requirements.txt)
+# 2. Antigravity CLI (agy) configured for headless ADC execution (AGY_ADC_AUTH=true)
+# 3. Harbor + SkillsBench evaluation runner and Bandit AST security scanner
+# 4. Golang Sandbox Worker HTTP daemon
+
+FROM golang:1.23-bookworm AS go-builder
+
+WORKDIR /workspace
+COPY go.mod ./
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/sandbox-worker ./cmd/sandbox-worker
+
+FROM python:3.11-slim-bookworm
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    git \
+    jq \
+    bubblewrap \
+    zip \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create isolated Python 3.11 virtual environment mirroring Gemini Enterprise ge_skills_image
+RUN python3 -m venv /opt/ge-skills-venv
+COPY runtime/ge_frozen_requirements.txt /tmp/ge_frozen_requirements.txt
+RUN /opt/ge-skills-venv/bin/pip install --no-cache-dir -r /tmp/ge_frozen_requirements.txt \
+    && /opt/ge-skills-venv/bin/pip install --no-cache-dir bandit pytest
+
+# Install Harbor CLI and Antigravity CLI (agy) binary
+# Note: Customers building in their environment can mount or install agy from the Google Cloud SDK / Antigravity release channel
+RUN mkdir -p /usr/local/bin /workspace/sandboxes /logs/verifier
+
+COPY --from=go-builder /out/sandbox-worker /usr/local/bin/sandbox-worker
+COPY runtime/ge_frozen_requirements.txt /opt/ge-skills-venv/ge_frozen_requirements.txt
+
+# Configure headless Antigravity CLI (agy) with Application Default Credentials (ADC)
+ENV AGY_ADC_AUTH=true
+ENV PATH="/opt/ge-skills-venv/bin:/usr/local/bin:${PATH}"
+ENV GE_VENV_PYTHON="/opt/ge-skills-venv/bin/python3"
+ENV SANDBOX_WORKDIR="/workspace/sandboxes"
+ENV PORT=8081
+
+EXPOSE 8081
+ENTRYPOINT ["/usr/local/bin/sandbox-worker"]

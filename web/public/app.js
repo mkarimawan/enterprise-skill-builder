@@ -1,4 +1,4 @@
-// Skill Builder Frontend Client (Pantheon Left-Nav + Progressive Step Gating)
+// Skill Builder Frontend Client (Pantheon Left-Nav + Open Exploration with In-Page Gating)
 (function () {
   const state = {
     sessions: [],
@@ -24,21 +24,10 @@
   const newSessionBtn = document.getElementById('newSessionBtn');
   const iapEmailText = document.getElementById('iapEmailText');
   const activePageHeading = document.getElementById('activePageHeading');
-  const workflowStepStatus = document.getElementById('workflowStepStatus');
   const topBarPublishBtn = document.getElementById('topBarPublishBtn');
 
   const stageTabs = document.querySelectorAll('.cfc-nav-item');
   const stagePanels = document.querySelectorAll('.stage-view');
-
-  const stageTabSandbox = document.getElementById('stageTabSandbox');
-  const stageTabEval = document.getElementById('stageTabEval');
-  const stageTabPublish = document.getElementById('stageTabPublish');
-
-  const navStateInterview = document.getElementById('navStateInterview');
-  const navStateGrounding = document.getElementById('navStateGrounding');
-  const navStateSandbox = document.getElementById('navStateSandbox');
-  const navStateEval = document.getElementById('navStateEval');
-  const navStatePublish = document.getElementById('navStatePublish');
 
   const chatTranscript = document.getElementById('chatTranscript');
   const chatInput = document.getElementById('chatInput');
@@ -58,6 +47,10 @@
   const groundingAssetsList = document.getElementById('groundingAssetsList');
   const fixturePreviewCode = document.getElementById('fixturePreviewCode');
 
+  const sandboxGateNotice = document.getElementById('sandboxGateNotice');
+  const sandboxWorkspaceWrap = document.getElementById('sandboxWorkspaceWrap');
+  const runSandboxBtn = document.getElementById('runSandboxBtn');
+  const sandboxToEvalBtn = document.getElementById('sandboxToEvalBtn');
   const agyEventStream = document.getElementById('agyEventStream');
   const securityChecksList = document.getElementById('securityChecksList');
   const fileTabsBar = document.getElementById('fileTabsBar');
@@ -65,12 +58,19 @@
   const downloadBundleBtnSandbox = document.getElementById('downloadBundleBtnSandbox');
   const navDownloadZipLink = document.getElementById('navDownloadZipLink');
 
+  const evalGateNotice = document.getElementById('evalGateNotice');
+  const evalWorkspaceWrap = document.getElementById('evalWorkspaceWrap');
+  const runHarborEvalBtn = document.getElementById('runHarborEvalBtn');
+  const evalToPublishBtn = document.getElementById('evalToPublishBtn');
   const evalKpiGrid = document.getElementById('evalKpiGrid');
   const harborTrialsList = document.getElementById('harborTrialsList');
   const harborFileTabs = document.getElementById('harborFileTabs');
   const harborFileViewer = document.getElementById('harborFileViewer');
 
+  const publishGateNotice = document.getElementById('publishGateNotice');
+  const publishWorkspaceWrap = document.getElementById('publishWorkspaceWrap');
   const publishForm = document.getElementById('publishForm');
+  const publishFormFieldset = document.getElementById('publishFormFieldset');
   const pubCheckGeminiEnterprise = document.getElementById('pubCheckGeminiEnterprise');
   const geAppIdFieldGroup = document.getElementById('geAppIdFieldGroup');
   const publishReceiptsList = document.getElementById('publishReceiptsList');
@@ -211,7 +211,7 @@ pyyaml==6.0.1</pre>
     downloadZipDirectBtn.href = downloadUrl;
     navDownloadZipLink.href = downloadUrl;
 
-    updateStepGating(sess);
+    updatePageControlsState(sess);
     renderInterviewAndBlueprint();
     renderGroundingStage();
     renderSandboxStage();
@@ -219,90 +219,31 @@ pyyaml==6.0.1</pre>
     renderPublishStage();
   }
 
-  function updateStepGating(sess) {
+  // Keeps all left-nav items open for exploration, while graying out controls inside pages whose prerequisites are not yet met.
+  function updatePageControlsState(sess) {
     if (!sess) return;
     const bp = sess.blueprint || {};
     const hasBlueprint = Boolean(bp.readinessScore > 0);
-    const hasData = Boolean(sess.groundingAssets && sess.groundingAssets.length > 0);
     const hasSandbox = Boolean((sess.agyEvents && sess.agyEvents.length > 0) || (sess.securityReport && sess.securityReport.passed));
     const hasEval = Boolean(sess.harborReport && sess.harborReport.oraclePassed);
-    const hasPublished = Boolean(sess.publishHistory && sess.publishHistory.length > 0);
 
-    // 1. Create skill nav state
-    if (hasBlueprint) {
-      navStateInterview.textContent = 'Done';
-      navStateInterview.className = 'nav-step-state done';
-    } else {
-      navStateInterview.textContent = 'Draft';
-      navStateInterview.className = 'nav-step-state';
-    }
+    // Sandbox page state
+    sandboxGateNotice.classList.toggle('hidden-field', hasBlueprint);
+    sandboxWorkspaceWrap.classList.toggle('workspace-grayed', !hasBlueprint);
+    runSandboxBtn.disabled = !hasBlueprint;
+    sandboxToEvalBtn.disabled = !hasSandbox;
 
-    // 2. Data sources nav state
-    if (hasData) {
-      navStateGrounding.textContent = `${sess.groundingAssets.length} added`;
-      navStateGrounding.className = 'nav-step-state done';
-    } else {
-      navStateGrounding.textContent = 'Optional';
-      navStateGrounding.className = 'nav-step-state';
-    }
+    // Evaluations page state
+    evalGateNotice.classList.toggle('hidden-field', hasSandbox);
+    evalWorkspaceWrap.classList.toggle('workspace-grayed', !hasSandbox);
+    runHarborEvalBtn.disabled = !hasSandbox;
+    evalToPublishBtn.disabled = !hasEval;
 
-    // 3. Sandbox test gating
-    stageTabSandbox.disabled = !hasBlueprint;
-    if (hasSandbox) {
-      navStateSandbox.textContent = 'Passed';
-      navStateSandbox.className = 'nav-step-state done';
-    } else if (hasBlueprint) {
-      navStateSandbox.textContent = 'Ready';
-      navStateSandbox.className = 'nav-step-state';
-    } else {
-      navStateSandbox.textContent = 'Locked';
-      navStateSandbox.className = 'nav-step-state';
-    }
-
-    // 4. Evaluations gating (requires Sandbox test to pass first)
-    stageTabEval.disabled = !hasSandbox;
-    if (hasEval) {
-      navStateEval.textContent = 'Passed';
-      navStateEval.className = 'nav-step-state done';
-    } else if (hasSandbox) {
-      navStateEval.textContent = 'Ready';
-      navStateEval.className = 'nav-step-state';
-    } else {
-      navStateEval.textContent = 'Locked';
-      navStateEval.className = 'nav-step-state';
-    }
-
-    // 5. Publish gating (requires Evaluations to pass first)
-    stageTabPublish.disabled = !hasEval;
+    // Publish page state & top-right Publish button
+    publishGateNotice.classList.toggle('hidden-field', hasEval);
+    publishWorkspaceWrap.classList.toggle('workspace-grayed', !hasEval);
+    publishFormFieldset.disabled = !hasEval;
     topBarPublishBtn.disabled = !hasEval;
-    if (hasPublished) {
-      navStatePublish.textContent = 'Published';
-      navStatePublish.className = 'nav-step-state done';
-    } else if (hasEval) {
-      navStatePublish.textContent = 'Ready';
-      navStatePublish.className = 'nav-step-state done';
-    } else {
-      navStatePublish.textContent = 'Locked';
-      navStatePublish.className = 'nav-step-state';
-    }
-
-    // Top-right workflow progress status
-    if (hasPublished) {
-      workflowStepStatus.textContent = 'Skill published';
-      workflowStepStatus.className = 'status-badge status-pass';
-    } else if (hasEval) {
-      workflowStepStatus.textContent = 'Evaluations passed: ready to publish';
-      workflowStepStatus.className = 'status-badge status-pass';
-    } else if (hasSandbox) {
-      workflowStepStatus.textContent = 'Sandbox passed: run evaluations next';
-      workflowStepStatus.className = 'status-badge status-neutral';
-    } else if (hasBlueprint) {
-      workflowStepStatus.textContent = 'Draft ready: connect data or run sandbox test';
-      workflowStepStatus.className = 'status-badge status-neutral';
-    } else {
-      workflowStepStatus.textContent = 'Describe your skill to begin';
-      workflowStepStatus.className = 'status-badge status-neutral';
-    }
   }
 
   function switchStage(stageName) {
@@ -362,8 +303,8 @@ pyyaml==6.0.1</pre>
     const hasBlueprint = Boolean(bp.readinessScore > 0);
 
     if (!hasBlueprint) {
-      bpReadinessBadge.textContent = 'Draft';
-      bpReadinessBadge.className = 'status-badge status-neutral tabular-nums';
+      bpReadinessBadge.textContent = 'Not started';
+      bpReadinessBadge.className = 'status-badge status-neutral';
       blueprintPanelFooter.classList.add('hidden-field');
       blueprintCanvasContent.innerHTML = `
         <div class="cfc-empty-state">
@@ -381,7 +322,7 @@ pyyaml==6.0.1</pre>
     }
 
     bpReadinessBadge.textContent = `${bp.readinessScore}% ready`;
-    bpReadinessBadge.className = 'status-badge status-pass tabular-nums';
+    bpReadinessBadge.className = 'status-badge status-pass';
     blueprintPanelFooter.classList.remove('hidden-field');
 
     const useWhen = (bp.useWhenTriggers || []).map((t) => `<li>${escapeHtml(t)}</li>`).join('');
@@ -393,7 +334,7 @@ pyyaml==6.0.1</pre>
     blueprintCanvasContent.innerHTML = `
       <div class="ledger-section">
         <div class="ledger-label">What this skill does</div>
-        <div style="font-weight: 600; font-size: 14px;">${escapeHtml(bp.displayName || bp.name)} <span class="ledger-row-sub">(<code>${escapeHtml(bp.name)}</code>)</span></div>
+        <div style="font-weight: 500; font-size: 14px;">${escapeHtml(bp.displayName || bp.name)} <span class="ledger-row-sub">(<code>${escapeHtml(bp.name)}</code>)</span></div>
         <p class="ledger-row-sub" style="margin-top: 4px;">${escapeHtml(bp.summary)}</p>
       </div>
 
@@ -423,7 +364,7 @@ pyyaml==6.0.1</pre>
       groundingAssetsList.innerHTML = `
         <div class="cfc-empty-state" style="padding: 28px 16px;">
           <div class="empty-state-title">No business data attached yet</div>
-          <p class="empty-state-desc">Click "Attach sample data" next to any business system above, or skip directly to the sandbox test.</p>
+          <p class="empty-state-desc">Click "Attach sample data" next to any business system above, or continue directly to the sandbox test.</p>
         </div>
       `;
       fixturePreviewCode.textContent = '// Select a business data source on the left to preview safe sample records for testing.';
@@ -456,7 +397,7 @@ pyyaml==6.0.1</pre>
       agyEventStream.innerHTML = `
         <div class="cfc-empty-state">
           <div class="empty-state-title">Sandbox test not run yet</div>
-          <p class="empty-state-desc">Click "Re-run test" above to build the skill files and verify them in the isolated Python 3.11 sandbox.</p>
+          <p class="empty-state-desc">Click "Run sandbox test" above to build the skill files and verify them in the isolated Python 3.11 sandbox.</p>
         </div>
       `;
     } else {
@@ -529,7 +470,7 @@ pyyaml==6.0.1</pre>
       harborTrialsList.innerHTML = `
         <div class="cfc-empty-state">
           <div class="empty-state-title">No evaluation results yet</div>
-          <p class="empty-state-desc">Click "Re-run evaluation" to compare accuracy with and without your skill.</p>
+          <p class="empty-state-desc">Click "Run evaluation" to compare accuracy with and without your skill.</p>
         </div>
       `;
       harborFileTabs.innerHTML = '';
@@ -622,7 +563,7 @@ pyyaml==6.0.1</pre>
             <span class="ledger-row-title">${escapeHtml(r.target)}</span>
             <span class="status-badge status-pass">${escapeHtml(r.status)}</span>
           </div>
-          <div class="ledger-row-sub tabular-nums"><code>${escapeHtml(r.resourceUri)}</code> (${r.bundleSizeKb} KB)</div>
+          <div class="ledger-row-sub"><code>${escapeHtml(r.resourceUri)}</code> (${r.bundleSizeKb} KB)</div>
           <pre class="cmd-snippet">$ ${escapeHtml(r.cliCommand)}</pre>
         </div>
       `
@@ -674,7 +615,6 @@ pyyaml==6.0.1</pre>
 
   async function sendInterviewTurn(messageText, modality) {
     if (!state.currentSession || !messageText.trim()) return;
-    // If user typed a skill name in the box before sending, save it first
     const pendingName = skillNameInput.value.trim();
     if (pendingName && pendingName !== state.currentSession.blueprint.displayName) {
       await saveSkillName();
@@ -703,10 +643,8 @@ pyyaml==6.0.1</pre>
 
   async function triggerSandboxRun() {
     if (!state.currentSession) return;
-    stageTabSandbox.disabled = false;
     switchStage('sandbox');
-    const runBtn = document.getElementById('runSandboxBtn');
-    runBtn.disabled = true;
+    runSandboxBtn.disabled = true;
     agyEventStream.innerHTML = renderSkeletonLoader(4);
     try {
       const res = await fetch(`/api/sessions/${state.currentSession.id}/sandbox`, { method: 'POST' });
@@ -717,16 +655,14 @@ pyyaml==6.0.1</pre>
         setCurrentSession(data.session);
       }
     } finally {
-      runBtn.disabled = false;
+      runSandboxBtn.disabled = false;
     }
   }
 
   async function triggerHarborEval() {
     if (!state.currentSession) return;
-    stageTabEval.disabled = false;
     switchStage('eval');
-    const evalBtn = document.getElementById('runHarborEvalBtn');
-    evalBtn.disabled = true;
+    runHarborEvalBtn.disabled = true;
     harborTrialsList.innerHTML = renderSkeletonLoader(3);
     try {
       const res = await fetch(`/api/sessions/${state.currentSession.id}/eval`, { method: 'POST' });
@@ -737,7 +673,7 @@ pyyaml==6.0.1</pre>
         setCurrentSession(data.session);
       }
     } finally {
-      evalBtn.disabled = false;
+      runHarborEvalBtn.disabled = false;
     }
   }
 
@@ -785,7 +721,6 @@ pyyaml==6.0.1</pre>
   function bindEvents() {
     stageTabs.forEach((tab) => {
       tab.addEventListener('click', () => {
-        if (tab.disabled) return;
         switchStage(tab.dataset.stage);
       });
     });
@@ -871,17 +806,26 @@ pyyaml==6.0.1</pre>
       }
     });
 
-    // Step progression buttons
+    // Step progression and prerequisite helper buttons
     document.getElementById('continueToDataBtn').addEventListener('click', () => switchStage('grounding'));
     document.getElementById('skipToSandboxBtn').addEventListener('click', () => triggerSandboxRun());
-    document.getElementById('groundingToSandboxBtn').addEventListener('click', () => triggerSandboxRun());
-    document.getElementById('runSandboxBtn').addEventListener('click', () => triggerSandboxRun());
-    document.getElementById('sandboxToEvalBtn').addEventListener('click', () => triggerHarborEval());
-    document.getElementById('runHarborEvalBtn').addEventListener('click', () => triggerHarborEval());
-    document.getElementById('evalToPublishBtn').addEventListener('click', () => {
-      stageTabPublish.disabled = false;
-      switchStage('publish');
+    document.getElementById('groundingToSandboxBtn').addEventListener('click', () => {
+      const hasBlueprint = Boolean(state.currentSession && state.currentSession.blueprint && state.currentSession.blueprint.readinessScore > 0);
+      if (hasBlueprint) {
+        triggerSandboxRun();
+      } else {
+        switchStage('sandbox');
+      }
     });
+    runSandboxBtn.addEventListener('click', () => triggerSandboxRun());
+    sandboxToEvalBtn.addEventListener('click', () => triggerHarborEval());
+    runHarborEvalBtn.addEventListener('click', () => triggerHarborEval());
+    evalToPublishBtn.addEventListener('click', () => switchStage('publish'));
+
+    document.getElementById('sandboxGoToCreateBtn').addEventListener('click', () => switchStage('interview'));
+    document.getElementById('evalGoToSandboxBtn').addEventListener('click', () => switchStage('sandbox'));
+    document.getElementById('publishGoToEvalBtn').addEventListener('click', () => switchStage('eval'));
+
     topBarPublishBtn.addEventListener('click', () => {
       if (!topBarPublishBtn.disabled) {
         switchStage('publish');
@@ -932,14 +876,13 @@ pyyaml==6.0.1</pre>
       renderEvalStage();
     });
 
-    // Toggle Gemini Enterprise app ID input visibility when its checkbox is ticked
     pubCheckGeminiEnterprise.addEventListener('change', () => {
       geAppIdFieldGroup.classList.toggle('hidden-field', !pubCheckGeminiEnterprise.checked);
     });
 
     publishForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!state.currentSession) return;
+      if (!state.currentSession || publishFormFieldset.disabled) return;
       const checkedBoxes = Array.from(document.querySelectorAll('input[name="pubTargets"]:checked'));
       const targets = checkedBoxes.map((cb) => cb.value);
       if (targets.length === 0) {

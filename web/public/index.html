@@ -7,7 +7,7 @@
   <title>Skill Builder | Google Cloud</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@500;600;700&amp;display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&amp;family=Roboto:wght@400;500;700&amp;family=Roboto+Mono:wght@400;500&amp;display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
@@ -16,7 +16,7 @@
     <header class="cfc-topbar">
       <div class="topbar-left">
         <div class="brand-icon" aria-hidden="true">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
             <polyline points="2 17 12 22 22 17"></polyline>
             <polyline points="2 12 12 17 22 12"></polyline>
@@ -36,14 +36,14 @@
         <button id="openDrawerBtn" class="btn btn-secondary btn-sm" type="button">Deployment guide</button>
         <div class="user-pill" id="iapIdentityBadge">
           <span class="user-dot"></span>
-          <span id="iapEmailText" class="tabular-nums">Signed in</span>
+          <span id="iapEmailText">Signed in</span>
         </div>
       </div>
     </header>
 
     <!-- Pantheon Body: Left Section Nav + Central Page -->
     <div class="pantheon-body">
-      <!-- Left-Hand Section Navigation (Unnumbered, Sentence Case, Progressively Gated) -->
+      <!-- Left-Hand Section Navigation (Clean, Open for Exploration, Unnumbered) -->
       <aside class="cfc-section-nav" aria-label="Section navigation">
         <nav class="nav-list">
           <button id="stageTabInterview" class="cfc-nav-item active" data-stage="interview" type="button">
@@ -52,7 +52,6 @@
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
             </svg>
             <span class="nav-item-label">Create skill</span>
-            <span id="navStateInterview" class="nav-step-state">Draft</span>
           </button>
 
           <button id="stageTabGrounding" class="cfc-nav-item" data-stage="grounding" type="button">
@@ -62,35 +61,31 @@
               <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
             </svg>
             <span class="nav-item-label">Data sources</span>
-            <span id="navStateGrounding" class="nav-step-state">Optional</span>
           </button>
 
-          <button id="stageTabSandbox" class="cfc-nav-item" data-stage="sandbox" type="button" disabled title="Describe your skill first to unlock the sandbox test">
+          <button id="stageTabSandbox" class="cfc-nav-item" data-stage="sandbox" type="button">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="4 17 10 11 4 5"></polyline>
               <line x1="12" y1="19" x2="20" y2="19"></line>
             </svg>
             <span class="nav-item-label">Sandbox test</span>
-            <span id="navStateSandbox" class="nav-step-state">Locked</span>
           </button>
 
-          <button id="stageTabEval" class="cfc-nav-item" data-stage="eval" type="button" disabled title="Complete the sandbox test first to unlock evaluations">
+          <button id="stageTabEval" class="cfc-nav-item" data-stage="eval" type="button">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 11l3 3L22 4"></path>
               <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
             </svg>
             <span class="nav-item-label">Evaluations</span>
-            <span id="navStateEval" class="nav-step-state">Locked</span>
           </button>
 
-          <button id="stageTabPublish" class="cfc-nav-item" data-stage="publish" type="button" disabled title="Complete evaluations first to unlock publishing">
+          <button id="stageTabPublish" class="cfc-nav-item" data-stage="publish" type="button">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
             <span class="nav-item-label">Publish</span>
-            <span id="navStatePublish" class="nav-step-state">Locked</span>
           </button>
         </nav>
 
@@ -105,8 +100,7 @@
         <div class="cfc-action-bar">
           <h2 id="activePageHeading" class="action-bar-title">Create skill</h2>
           <div id="actionBarButtons" class="action-bar-controls">
-            <span id="workflowStepStatus" class="status-badge status-neutral">Describe your skill to begin</span>
-            <button id="topBarPublishBtn" class="btn btn-primary btn-sm" type="button" disabled title="Complete sandbox test and evaluations to unlock publishing">Publish skill</button>
+            <button id="topBarPublishBtn" class="btn btn-primary btn-sm" type="button" disabled title="Complete sandbox test and evaluations to enable publishing">Publish skill</button>
           </div>
         </div>
 
@@ -152,10 +146,10 @@
               <div class="cfc-panel">
                 <div class="panel-header">
                   <h3 class="panel-title">Skill summary</h3>
-                  <span id="bpReadinessBadge" class="status-badge status-neutral tabular-nums">Draft</span>
+                  <span id="bpReadinessBadge" class="status-badge status-neutral">Not started</span>
                 </div>
                 <div class="panel-subtitle">
-                  As you describe your goal on the left, this summary automatically captures what the skill does, when Gemini should use it, the inputs it needs, and its safety rules.
+                  As you describe your goal on the left, this summary captures what the skill does, when Gemini should use it, the inputs it needs, and its safety rules.
                 </div>
 
                 <!-- Editable Skill Name Bar -->
@@ -186,7 +180,7 @@
                   <h3 class="panel-title">Connect business data (optional)</h3>
                 </div>
                 <div class="panel-subtitle">
-                  Does this skill need to check company data or documents? Select a business system below to attach it and automatically create safe sample records for testing. If your skill does not need external data, click <strong>Next: Run sandbox test</strong>.
+                  Does this skill need to check company data or documents? Select a business system below to attach it and automatically create safe sample records for testing. If your skill does not need external data, click <strong>Next: Sandbox test</strong>.
                 </div>
 
                 <!-- Simple 1-Click Business Data Catalog -->
@@ -269,7 +263,7 @@
                 </div>
                 <pre id="fixturePreviewCode" class="code-viewer"></pre>
                 <div class="panel-footer">
-                  <button id="groundingToSandboxBtn" class="btn btn-primary" type="button">Next: Run sandbox test</button>
+                  <button id="groundingToSandboxBtn" class="btn btn-primary" type="button">Next: Sandbox test</button>
                 </div>
               </div>
             </div>
@@ -277,11 +271,16 @@
 
           <!-- VIEW 3: SANDBOX TEST -->
           <section id="stage-sandbox" class="stage-view">
-            <div class="split-two">
+            <div id="sandboxGateNotice" class="prereq-banner hidden-field">
+              <span><strong>Next step required:</strong> Describe what your skill should do in <strong>Create skill</strong> before running the sandbox test.</span>
+              <button id="sandboxGoToCreateBtn" class="btn btn-secondary btn-sm" type="button">Go to Create skill</button>
+            </div>
+
+            <div id="sandboxWorkspaceWrap" class="split-two">
               <div class="cfc-panel">
                 <div class="panel-header">
                   <h3 class="panel-title">Sandbox execution log</h3>
-                  <button id="runSandboxBtn" class="btn btn-secondary btn-sm" type="button">Re-run test</button>
+                  <button id="runSandboxBtn" class="btn btn-primary btn-sm" type="button">Run sandbox test</button>
                 </div>
                 <div class="panel-subtitle">
                   Dry-runs your generated skill code inside an isolated Cloud Run container to verify it executes cleanly and passes security checks.
@@ -302,7 +301,7 @@
                 <div id="fileTabsBar" class="file-tab-bar"></div>
                 <pre id="fileViewerContent" class="code-viewer"></pre>
                 <div class="panel-footer">
-                  <button id="sandboxToEvalBtn" class="btn btn-primary" type="button">Next: Run evaluations</button>
+                  <button id="sandboxToEvalBtn" class="btn btn-primary" type="button">Next: Evaluations</button>
                 </div>
               </div>
             </div>
@@ -310,28 +309,35 @@
 
           <!-- VIEW 4: EVALUATIONS -->
           <section id="stage-eval" class="stage-view">
-            <div id="evalKpiGrid" class="kpi-strip"></div>
+            <div id="evalGateNotice" class="prereq-banner hidden-field">
+              <span><strong>Next step required:</strong> Run the <strong>Sandbox test</strong> first to verify your skill files before running evaluations.</span>
+              <button id="evalGoToSandboxBtn" class="btn btn-secondary btn-sm" type="button">Go to Sandbox test</button>
+            </div>
 
-            <div class="split-two">
-              <div class="cfc-panel">
-                <div class="panel-header">
-                  <h3 class="panel-title">Quality evaluation results (without skill vs. with skill)</h3>
-                  <button id="runHarborEvalBtn" class="btn btn-secondary btn-sm" type="button">Re-run evaluation</button>
-                </div>
-                <div class="panel-subtitle">
-                  Compares how accurately Gemini answers test scenarios with your skill enabled versus without it. Once evaluations pass, publishing is unlocked.
-                </div>
-                <div id="harborTrialsList"></div>
-              </div>
+            <div id="evalWorkspaceWrap">
+              <div id="evalKpiGrid" class="kpi-strip"></div>
 
-              <div class="cfc-panel">
-                <div class="panel-header">
-                  <h3 class="panel-title">Evaluation benchmark files</h3>
+              <div class="split-two">
+                <div class="cfc-panel">
+                  <div class="panel-header">
+                    <h3 class="panel-title">Quality evaluation results (without skill vs. with skill)</h3>
+                    <button id="runHarborEvalBtn" class="btn btn-primary btn-sm" type="button">Run evaluation</button>
+                  </div>
+                  <div class="panel-subtitle">
+                    Compares how accurately Gemini answers test scenarios with your skill enabled versus without it. Once evaluations pass, publishing is enabled.
+                  </div>
+                  <div id="harborTrialsList"></div>
                 </div>
-                <div id="harborFileTabs" class="file-tab-bar"></div>
-                <pre id="harborFileViewer" class="code-viewer"></pre>
-                <div class="panel-footer">
-                  <button id="evalToPublishBtn" class="btn btn-primary" type="button">Next: Publish skill</button>
+
+                <div class="cfc-panel">
+                  <div class="panel-header">
+                    <h3 class="panel-title">Evaluation benchmark files</h3>
+                  </div>
+                  <div id="harborFileTabs" class="file-tab-bar"></div>
+                  <pre id="harborFileViewer" class="code-viewer"></pre>
+                  <div class="panel-footer">
+                    <button id="evalToPublishBtn" class="btn btn-primary" type="button">Next: Publish</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -339,7 +345,12 @@
 
           <!-- VIEW 5: PUBLISH (CHECKBOX TARGETS DEFAULTING TO AGENT REGISTRY) -->
           <section id="stage-publish" class="stage-view">
-            <div class="split-two">
+            <div id="publishGateNotice" class="prereq-banner hidden-field">
+              <span><strong>Next step required:</strong> Complete <strong>Sandbox test</strong> and <strong>Evaluations</strong> to unlock publishing. You can preview the publishing options below.</span>
+              <button id="publishGoToEvalBtn" class="btn btn-secondary btn-sm" type="button">Go to Evaluations</button>
+            </div>
+
+            <div id="publishWorkspaceWrap" class="split-two">
               <div class="cfc-panel">
                 <div class="panel-header">
                   <h3 class="panel-title">Publish verified skill</h3>
@@ -349,62 +360,64 @@
                 </div>
                 <div class="panel-body">
                   <form id="publishForm" class="form-stack">
-                    <div class="field-group">
-                      <span class="field-label">Where to publish</span>
-                      <div class="publish-checkbox-list" role="group" aria-label="Where to publish">
-                        <label class="publish-checkbox-row" for="pubCheckAgentRegistry">
-                          <input id="pubCheckAgentRegistry" type="checkbox" name="pubTargets" value="agent_registry" checked />
-                          <div class="publish-checkbox-content">
-                            <div class="publish-checkbox-title">
-                              <span>Google Cloud Agent Registry</span>
-                              <span class="status-badge status-pass">Default</span>
-                            </div>
-                            <div class="publish-checkbox-desc">Register in your central project catalog so Gemini Enterprise and Antigravity agents can discover and use this skill.</div>
-                          </div>
-                        </label>
-
-                        <label class="publish-checkbox-row" for="pubCheckGeminiEnterprise">
-                          <input id="pubCheckGeminiEnterprise" type="checkbox" name="pubTargets" value="gemini_enterprise" />
-                          <div class="publish-checkbox-content">
-                            <div class="publish-checkbox-title">
-                              <span>Gemini Enterprise app</span>
-                            </div>
-                            <div class="publish-checkbox-desc">Attach directly to a specific Gemini Enterprise app in your organization.</div>
-                          </div>
-                        </label>
-
-                        <label class="publish-checkbox-row" for="pubCheckZipBundle">
-                          <input id="pubCheckZipBundle" type="checkbox" name="pubTargets" value="zip_bundle" />
-                          <div class="publish-checkbox-content">
-                            <div class="publish-checkbox-title">
-                              <span>Download .zip archive</span>
-                            </div>
-                            <div class="publish-checkbox-desc">Generate a downloadable .zip archive containing SKILL.md, Python scripts, and evaluation tests.</div>
-                          </div>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div class="form-row-2">
+                    <fieldset id="publishFormFieldset" class="form-fieldset">
                       <div class="field-group">
-                        <label class="field-label" for="pubProjectId">Google Cloud project ID</label>
-                        <input id="pubProjectId" class="input-field tabular-nums" type="text" value="meridian-finops-prod-01" />
-                      </div>
-                      <div class="field-group">
-                        <label class="field-label" for="pubVersion">Skill version</label>
-                        <input id="pubVersion" class="input-field tabular-nums" type="text" value="v1.0.0" />
-                      </div>
-                    </div>
+                        <span class="field-label">Where to publish</span>
+                        <div class="publish-checkbox-list" role="group" aria-label="Where to publish">
+                          <label class="publish-checkbox-row" for="pubCheckAgentRegistry">
+                            <input id="pubCheckAgentRegistry" type="checkbox" name="pubTargets" value="agent_registry" checked />
+                            <div class="publish-checkbox-content">
+                              <div class="publish-checkbox-title">
+                                <span>Google Cloud Agent Registry</span>
+                                <span class="status-badge status-pass">Default</span>
+                              </div>
+                              <div class="publish-checkbox-desc">Register in your central project catalog so Gemini Enterprise and Antigravity agents can discover and use this skill.</div>
+                            </div>
+                          </label>
 
-                    <div id="geAppIdFieldGroup" class="field-group hidden-field">
-                      <label class="field-label" for="pubGeAppId">Gemini Enterprise app ID</label>
-                      <input id="pubGeAppId" class="input-field tabular-nums" type="text" value="gemini-enterprise-spark-prod" />
-                    </div>
+                          <label class="publish-checkbox-row" for="pubCheckGeminiEnterprise">
+                            <input id="pubCheckGeminiEnterprise" type="checkbox" name="pubTargets" value="gemini_enterprise" />
+                            <div class="publish-checkbox-content">
+                              <div class="publish-checkbox-title">
+                                <span>Gemini Enterprise app</span>
+                              </div>
+                              <div class="publish-checkbox-desc">Attach directly to a specific Gemini Enterprise app in your organization.</div>
+                            </div>
+                          </label>
 
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                      <button id="submitPublishBtn" type="submit" class="btn btn-primary">Publish selected</button>
-                      <a id="downloadZipDirectBtn" class="btn btn-secondary" href="#" download>Download .zip now</a>
-                    </div>
+                          <label class="publish-checkbox-row" for="pubCheckZipBundle">
+                            <input id="pubCheckZipBundle" type="checkbox" name="pubTargets" value="zip_bundle" />
+                            <div class="publish-checkbox-content">
+                              <div class="publish-checkbox-title">
+                                <span>Download .zip archive</span>
+                              </div>
+                              <div class="publish-checkbox-desc">Generate a downloadable .zip archive containing SKILL.md, Python scripts, and evaluation tests.</div>
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div class="form-row-2">
+                        <div class="field-group">
+                          <label class="field-label" for="pubProjectId">Google Cloud project ID</label>
+                          <input id="pubProjectId" class="input-field" type="text" value="meridian-finops-prod-01" />
+                        </div>
+                        <div class="field-group">
+                          <label class="field-label" for="pubVersion">Skill version</label>
+                          <input id="pubVersion" class="input-field" type="text" value="v1.0.0" />
+                        </div>
+                      </div>
+
+                      <div id="geAppIdFieldGroup" class="field-group hidden-field">
+                        <label class="field-label" for="pubGeAppId">Gemini Enterprise app ID</label>
+                        <input id="pubGeAppId" class="input-field" type="text" value="gemini-enterprise-spark-prod" />
+                      </div>
+
+                      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button id="submitPublishBtn" type="submit" class="btn btn-primary">Publish selected</button>
+                        <a id="downloadZipDirectBtn" class="btn btn-secondary" href="#" download>Download .zip now</a>
+                      </div>
+                    </fieldset>
                   </form>
                 </div>
               </div>

@@ -6,7 +6,6 @@
     activeStage: 'interview',
     selectedBundleFile: 'SKILL.md',
     selectedHarborFile: 'harbor_task/task.toml',
-    activeDrawerTab: 'terraform',
     isRecordingVoice: false,
     recognition: null,
   };
@@ -75,89 +74,11 @@
   const publishReceiptsList = document.getElementById('publishReceiptsList');
   const downloadZipDirectBtn = document.getElementById('downloadZipDirectBtn');
 
-  const openDrawerBtn = document.getElementById('openDrawerBtn');
-  const closeDrawerBtn = document.getElementById('closeDrawerBtn');
-  const drawerBackdrop = document.getElementById('drawerBackdrop');
-  const referenceDrawer = document.getElementById('referenceDrawer');
-  const drawerContentArea = document.getElementById('drawerContentArea');
-
-  const drawerContentMap = {
-    terraform: `
-      <div class="ledger-section" style="padding: 0 0 14px 0;">
-        <div class="ledger-label">Admin prerequisites</div>
-        <p class="ledger-row-sub" style="margin-bottom: 8px;">
-          To deploy this portal into a Google Cloud project with Terraform, the administrator needs:
-        </p>
-        <ul class="ledger-items">
-          <li><code>roles/editor</code> (Project Editor)</li>
-          <li><code>roles/resourcemanager.projectIamAdmin</code> and <code>roles/iap.admin</code></li>
-        </ul>
-      </div>
-      <div class="ledger-section" style="padding: 14px 0 0 0;">
-        <div class="ledger-label">Deploy with Terraform</div>
-        <pre class="code-viewer" style="max-height: 320px;">git clone https://github.com/mkarimawan/enterprise-skill-builder.git
-cd enterprise-skill-builder
-
-cat &lt;&lt;EOF &gt; terraform/terraform.tfvars
-project_id = "your-gcp-project-id"
-region     = "us-central1"
-enable_iap = true
-
-iap_allowed_members = [
-  "user:admin@yourcompany.com"
-]
-EOF
-
-terraform -chdir=terraform init
-terraform -chdir=terraform plan
-terraform -chdir=terraform apply</pre>
-      </div>
-    `,
-    runtime: `
-      <div class="ledger-section" style="padding: 0;">
-        <div class="ledger-label">Sandbox Python 3.11 environment</div>
-        <p class="ledger-row-sub" style="margin-bottom: 10px;">
-          Skills are tested inside an isolated Cloud Run Gen2 sandbox matching the Gemini Enterprise Python 3.11 package baseline (<code>runtime/ge_frozen_requirements.txt</code>).
-        </p>
-        <pre class="code-viewer" style="max-height: 320px;">numpy==1.26.4
-pandas==2.2.2
-pydantic==2.8.2
-pyarrow==16.1.0
-scikit-learn==1.5.1
-scipy==1.14.0
-openpyxl==3.1.5
-pypdf==4.3.0
-python-docx==1.1.2
-python-pptx==0.6.23
-reportlab==4.2.2
-tabulate==0.9.0
-pyyaml==6.0.1</pre>
-      </div>
-    `,
-  };
-
   async function init() {
-    renderDrawerContent();
     await loadIdentity();
     await loadSessions();
     bindEvents();
     setupSpeechRecognition();
-  }
-
-  function toggleDrawer(open, tabName) {
-    if (tabName) {
-      state.activeDrawerTab = tabName;
-      document.querySelectorAll('[data-drawer-tab]').forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.drawerTab === tabName);
-      });
-      renderDrawerContent();
-    }
-    referenceDrawer.classList.toggle('open', open);
-    drawerBackdrop.classList.toggle('open', open);
-  }
-
-  function renderDrawerContent() {
-    drawerContentArea.innerHTML = drawerContentMap[state.activeDrawerTab] || drawerContentMap.terraform;
   }
 
   async function loadIdentity() {
@@ -719,14 +640,6 @@ pyyaml==6.0.1</pre>
       tab.addEventListener('click', () => {
         switchStage(tab.dataset.stage);
       });
-    });
-
-    openDrawerBtn.addEventListener('click', () => toggleDrawer(true, 'terraform'));
-    closeDrawerBtn.addEventListener('click', () => toggleDrawer(false));
-    drawerBackdrop.addEventListener('click', () => toggleDrawer(false));
-
-    document.querySelectorAll('[data-drawer-tab]').forEach((btn) => {
-      btn.addEventListener('click', () => toggleDrawer(true, btn.dataset.drawerTab));
     });
 
     sessionSelect.addEventListener('change', async (e) => {

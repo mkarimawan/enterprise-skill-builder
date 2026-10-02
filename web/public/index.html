@@ -33,7 +33,6 @@
       </div>
 
       <div class="topbar-right">
-        <button id="openDrawerBtn" class="btn btn-secondary btn-sm" type="button">Deployment guide</button>
         <div class="user-pill" id="iapIdentityBadge">
           <span class="user-dot"></span>
           <span id="iapEmailText">Signed in</span>
@@ -432,20 +431,6 @@
         </main>
       </div>
     </div>
-
-    <!-- Slide-Over Deployment Guide Drawer -->
-    <div id="drawerBackdrop" class="drawer-scrim" aria-hidden="true"></div>
-    <aside id="referenceDrawer" class="cfc-drawer" aria-label="Deployment guide">
-      <div class="panel-header">
-        <h2 class="panel-title">Deployment &amp; runtime guide</h2>
-        <button id="closeDrawerBtn" class="btn btn-secondary btn-sm" type="button">Close</button>
-      </div>
-      <div class="file-tab-bar">
-        <button id="drawerTabTerraform" class="file-tab active" data-drawer-tab="terraform" type="button">Terraform setup</button>
-        <button id="drawerTabRuntime" class="file-tab" data-drawer-tab="runtime" type="button">Python 3.11 runtime</button>
-      </div>
-      <div id="drawerContentArea" class="drawer-body"></div>
-    </aside>
   </div>
 
   <script src="/app.js"></script>

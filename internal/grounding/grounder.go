@@ -91,7 +91,7 @@ func generateDeterministicFixture(sourceType, _ string) string {
     {
       "record_id": "rec-1001",
       "usage_date": "2026-10-01",
-      "project_id": "acme-retail-genai-prod",
+      "project_id": "meridian-finops-prod-01",
       "service": "Cloud Run",
       "sku": "CPU Allocation Time (Gen2 gVisor)",
       "net_cost_usd": 1840.50,
@@ -109,7 +109,7 @@ func generateDeterministicFixture(sourceType, _ string) string {
     {
       "record_id": "rec-1002",
       "usage_date": "2026-10-01",
-      "project_id": "acme-retail-data-warehouse",
+      "project_id": "meridian-data-warehouse",
       "service": "BigQuery",
       "sku": "Analysis On-Demand Terabytes",
       "net_cost_usd": 3120.75,
@@ -128,7 +128,7 @@ func generateDeterministicFixture(sourceType, _ string) string {
     {
       "record_id": "rec-1003",
       "usage_date": "2026-10-01",
-      "project_id": "acme-retail-core-api",
+      "project_id": "meridian-erp-ledger",
       "service": "Cloud SQL",
       "sku": "Enterprise Plus Regional vCPU",
       "net_cost_usd": 515.00,

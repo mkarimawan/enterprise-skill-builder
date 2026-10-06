@@ -118,7 +118,7 @@ func RunSkillsBenchHarbor(session *models.SkillSession) (*models.HarborEvalRepor
 	report := &models.HarborEvalReport{
 		SuiteID:            fmt.Sprintf("skillsbench-%s-%d", bp.Name, time.Now().Unix()),
 		BenchmarkFramework: "SkillsBench + Harbor v1.0 (ATIF Trajectory Standard)",
-		ModelEvaluated:     "gemini-3.6-flash",
+		ModelEvaluated:     "gemini-3.8-flash",
 		OraclePassed:       true,
 		BaselinePassRate:   baseRate,
 		WithSkillPassRate:  skillRate,

@@ -16,7 +16,7 @@ import (
 	"github.com/googlecloudplatform/enterprise-skill-builder/internal/models"
 )
 
-// Engine orchestrates the Dual-Mode Voice & Text Interview Studio powered by Gemini 3.6 Flash.
+// Engine orchestrates the Dual-Mode Voice & Text Interview Studio powered by Gemini 3.8 Flash.
 type Engine struct {
 	ProjectID string
 	Location  string
@@ -28,7 +28,7 @@ func NewEngine(projectID, location, model string) *Engine {
 		location = "us-central1"
 	}
 	if model == "" {
-		model = "gemini-3.6-flash"
+		model = "gemini-3.8-flash"
 	}
 	return &Engine{
 		ProjectID: projectID,
@@ -53,7 +53,7 @@ func (e *Engine) ProcessTurn(ctx context.Context, session *models.SkillSession, 
 	}
 	session.Messages = append(session.Messages, userMsg)
 
-	// Update Blueprint deterministically + via Vertex AI Gemini 3.6 Flash when configured
+	// Update Blueprint deterministically + via Vertex AI Gemini 3.8 Flash when configured
 	bp := session.Blueprint
 	reply := e.synthesizeBlueprintAndReply(ctx, &bp, session.Messages, userInput)
 
@@ -74,7 +74,7 @@ func (e *Engine) ProcessTurn(ctx context.Context, session *models.SkillSession, 
 func (e *Engine) synthesizeBlueprintAndReply(ctx context.Context, bp *models.SkillBlueprint, history []models.ChatMessage, latest string) string {
 	lower := strings.ToLower(latest)
 
-	// Try live Vertex AI Gemini 3.6 Flash structured extraction first if ProjectID is configured
+	// Try live Vertex AI Gemini 3.8 Flash structured extraction first if ProjectID is configured
 	if e.ProjectID != "" {
 		if aiReply, updatedBP, err := e.callVertexGemini(ctx, *bp, history); err == nil && aiReply != "" {
 			*bp = updatedBP
@@ -275,7 +275,7 @@ func (e *Engine) callVertexGemini(ctx context.Context, currentBP models.SkillBlu
 		transcript.WriteString(fmt.Sprintf("[%s]: %s\n", strings.ToUpper(m.Role), m.Content))
 	}
 
-	prompt := fmt.Sprintf(`You are the Principal Enterprise Skill Architect for Gemini Enterprise (Spark / Sobi / Obi / Dolphin) and Antigravity 2.0.
+	prompt := fmt.Sprintf(`You are the Principal Enterprise Skill Architect for Gemini Enterprise (GE) and Antigravity 2.0.
 Given the current SkillBlueprint JSON and the interview transcript, update the SkillBlueprint and provide a concise, high-signal architect response (either asking 1-2 clarifying questions to reach 95%% readiness, or confirming the blueprint is ready for Cloud Run Sandbox compilation).
 Never use em-dashes, en-dashes, or section symbols.
 

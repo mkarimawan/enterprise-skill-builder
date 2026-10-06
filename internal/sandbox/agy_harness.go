@@ -213,7 +213,7 @@ func (h *Harness) ExecuteLocalSandbox(ctx context.Context, session *models.Skill
 		Step:      6,
 		Type:      "security_scan",
 		Title:     "GE Frozen Runtime Parity & AST Security Gate Passed",
-		Detail:    "Verified 100% compatibility with Gemini Enterprise ge_skills_image (Python 3.11). Zero unauthorized imports, zero outbound network sockets, zero hardcoded secrets.",
+		Detail:    "Verified 100% compatibility with the Gemini Enterprise Python 3.11 runtime. Zero unauthorized imports, zero outbound network sockets, zero hardcoded secrets.",
 		Command:   "python3 -m ast / bandit -r scripts/",
 		ExitCode:  0,
 		Duration:  "110ms",
@@ -248,7 +248,7 @@ func runASTAndSecurityAudit(scriptContent, executionOutput string, execPassed bo
 
 	return &models.SecurityAuditReport{
 		Passed:           execPassed && !hasSocket && !hasSubprocessShell,
-		RuntimeParity:    "Python 3.11.9 (Gemini Enterprise ge_skills_image Frozen Parity)",
+		RuntimeParity:    "Python 3.11.9 (Gemini Enterprise Frozen Runtime Parity)",
 		AllowedPackages:  []string{"json", "argparse", "statistics", "math", "decimal", "datetime", "pathlib", "typing"},
 		VendoredPackages: []string{},
 		Checks: []models.SecurityCheck{
@@ -256,7 +256,7 @@ func runASTAndSecurityAudit(scriptContent, executionOutput string, execPassed bo
 				ID:       "SEC-01",
 				Category: "Air-Gapped Network Isolation",
 				Status:   statusSocket,
-				Detail:   "Verified zero outbound HTTP/TCP socket calls inside skill scripts (compliant with GE VMaaS & Cloud Run Gen2 gVisor VPC lock).",
+				Detail:   "Verified zero outbound HTTP/TCP socket calls inside skill scripts (compliant with Gemini Enterprise & Cloud Run Gen2 gVisor VPC lock).",
 			},
 			{
 				ID:       "SEC-02",
@@ -322,9 +322,9 @@ description: %s Use when: %s. Don't use for: %s.
 
 ## Target Runtime & Compatibility
 
-- **Gemini Enterprise Web (Dolphin)** & **Gemini Enterprise Spark (Sobi / Obi VMaaS)**
+- **Gemini Enterprise (GE)**
 - **Antigravity 2.0** & **ADK SkillToolset**
-- **Runtime Profile**: Python 3.11 Frozen GE Sandbox (`+"`ge_skills_image`"+`) with zero external network dependencies.
+- **Runtime Profile**: Python 3.11 Frozen GE Sandbox with zero external network dependencies.
 
 ## Routing Conditions
 
@@ -359,7 +359,7 @@ python3 %s \
 
 func generateDeterministicPythonScript(bp models.SkillBlueprint) string {
 	return `#!/usr/bin/env python3
-"""Deterministic Enterprise Skill Script for Gemini Enterprise (Spark/Sobi/Dolphin) & Antigravity.
+"""Deterministic Enterprise Skill Script for Gemini Enterprise (GE) & Antigravity.
 
 Executes inside the air-gapped Python 3.11 GE sandbox with zero external network calls.
 """

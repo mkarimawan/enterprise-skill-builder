@@ -13,6 +13,6 @@ iap_allowed_members = [
   "group:business-skill-builders@yourcompany.com"
 ]
 
-# Optional: Gemini Enterprise (Spark / Sobi / Dolphin) App ID for one-click skill mounting
+# Optional: Gemini Enterprise App ID for one-click skill mounting
 discovery_engine_app_id   = ""
 discovery_engine_location = "global"

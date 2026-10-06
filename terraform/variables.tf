@@ -34,7 +34,7 @@ variable "sandbox_container_image" {
 }
 
 variable "discovery_engine_app_id" {
-  description = "Optional Gemini Enterprise (Discovery Engine) App ID for direct one-click skill mounting onto Spark / Sobi / Dolphin."
+  description = "Optional Gemini Enterprise (Discovery Engine) App ID for direct one-click skill mounting."
   type        = string
   default     = ""
 }
@@ -48,7 +48,7 @@ variable "discovery_engine_location" {
 variable "gemini_live_model" {
   description = "Vertex AI Gemini 3 model used for the Live Voice & Text Interview Studio."
   type        = string
-  default     = "gemini-3.6-flash"
+  default     = "gemini-3.8-flash"
 }
 
 variable "gemini_architect_model" {

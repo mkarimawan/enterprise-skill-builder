@@ -1,4 +1,4 @@
-// Skill Builder Frontend Client (Pantheon Left-Nav + Open Exploration with In-Page Gating)
+// Skill Builder Frontend Client (Google Cloud Console Left-Nav + Open Exploration with In-Page Gating)
 (function () {
   const state = {
     sessions: [],

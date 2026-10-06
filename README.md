@@ -22,11 +22,11 @@ This repository separates **One-Time Platform Deployment (Terraform)** from **Da
 2. **Self-Service Portal for Business Users & Skill Builders (Zero Terraform Needed per Skill)**:
    - Once Terraform outputs the `skill_builder_web_url`, any authorized business user, analyst, or engineer in `iap_allowed_members` simply opens that URL in their browser.
    - Inside the web portal, users can:
-     - Conduct a **Voice or Text Interview** (`gemini-3.6-flash`) with the live **Skill Blueprint Canvas**.
+     - Conduct a **Voice or Text Interview** (`gemini-3.8-flash`) with the live **Skill Blueprint Canvas**.
      - Attach **Enterprise Grounding** schemas (BigQuery, OpenAPI, MCP) and synthesize deterministic mock fixtures.
-     - Click **Compile & Self-Heal in Cloud Run Sandbox** to run headless `agy` inside the frozen Python 3.11 Gemini Enterprise runtime (`ge_skills_image` parity).
+     - Click **Compile & Self-Heal in Cloud Run Sandbox** to run headless `agy` inside the frozen Python 3.11 Gemini Enterprise runtime.
      - Run paired **SkillsBench + Harbor** evaluations (`Baseline No-Skill` vs. `With-Skill`) and inspect `/logs/verifier/reward.txt` and Normalized Gain ($g$).
-     - Click **Register & Mount Skill Now** in the UI to push the verified skill directly into the **Agent Platform Skill Registry**, mount it onto **Gemini Enterprise (Spark / Sobi / Dolphin)**, or **Download the `.zip` Bundle**.
+     - Click **Register & Mount Skill Now** in the UI to push the verified skill directly into the **Agent Platform Skill Registry**, mount it onto **Gemini Enterprise**, or **Download the `.zip` Bundle**.
 
 ---
 
@@ -68,7 +68,7 @@ iap_allowed_members = [
   "group:business-skill-builders@yourcompany.com"
 ]
 
-# Optional: Gemini Enterprise App ID for one-click mounting onto Spark / Sobi / Dolphin
+# Optional: Gemini Enterprise App ID for one-click skill mounting
 discovery_engine_app_id   = ""
 discovery_engine_location = "global"
 ```
@@ -114,7 +114,7 @@ enterprise-skill-builder/
 │   └── sandbox-worker/main.go     # Isolated Cloud Run Gen2 gVisor Sandbox Worker daemon
 ├── internal/
 │   ├── auth/iap.go                # Cloud Run Identity-Aware Proxy (IAP) JWT & header verifier
-│   ├── interview/engine.go        # Gemini 3.6 Flash Live Voice/Text Interview & Blueprint Canvas engine
+│   ├── interview/engine.go        # Gemini 3.8 Flash Live Voice/Text Interview & Blueprint Canvas engine
 │   ├── grounding/grounder.go      # BigQuery / OpenAPI / MCP schema grounder & mock fixture generator
 │   ├── sandbox/agy_harness.go     # Headless Antigravity CLI (agy) runner, self-healer, & AST/Bandit scanner
 │   ├── eval/skillsbench.go        # SkillsBench + Harbor task generator & paired evaluation runner
@@ -122,7 +122,7 @@ enterprise-skill-builder/
 │   ├── models/types.go            # Domain models
 │   └── store/store.go             # Session store with pre-seeded enterprise FinOps showcase
 ├── runtime/
-│   └── ge_frozen_requirements.txt # Frozen Python 3.11 package list matching Gemini Enterprise ge_skills_image
+│   └── ge_frozen_requirements.txt # Frozen Python 3.11 package list matching the Gemini Enterprise runtime
 ├── terraform/
 │   ├── providers.tf               # Google & Google-Beta providers
 │   ├── variables.tf               # Customer inputs (project_id, iap_allowed_members, optional overrides)

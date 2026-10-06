@@ -2,7 +2,7 @@
   "name": "enterprise-skill-builder-web",
   "version": "1.0.0",
   "private": true,
-  "description": "Enterprise Skill Builder Web Studio for Gemini Enterprise (Spark / Sobi / Dolphin) and Antigravity 2.0",
+  "description": "Enterprise Skill Builder Web Studio for Gemini Enterprise and Antigravity 2.0",
   "scripts": {
     "start": "echo 'Static assets served by Go backend at web/public'"
   }

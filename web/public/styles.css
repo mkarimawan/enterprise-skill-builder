@@ -1,11 +1,10 @@
 /* ==========================================================================
-   Enterprise Skill Builder - Pantheon (Google Cloud Console) Design System
+   Enterprise Skill Builder - Google Cloud Console Design System
    Typography: Google Sans (Display/Titles) + Roboto (Body/UI) + Roboto Mono (Code)
-   Source: //depot/google3/cloud/console/web/common/cloud_matter/themes/gm2/_typography.scss
    ========================================================================== */
 
 :root {
-  /* Pantheon & Alabaster Daylight Palette */
+  /* Google Cloud Console & Alabaster Daylight Palette */
   --canvas-alabaster: #F8FAFC;
   --surface-pure: #FFFFFF;
   --surface-muted: #F1F3F4;
@@ -16,7 +15,7 @@
   --border-hairline: #DADCE0;
   --border-subtle: #E8EAED;
 
-  /* Pantheon Primary Blue */
+  /* Google Cloud Primary Blue */
   --accent-brand: #1A73E8;
   --accent-brand-hover: #1557B0;
   --accent-wash: #E8F0FE;
@@ -29,7 +28,7 @@
   --status-fail-ink: #C5221F;
   --status-fail-wash: #FCE8E6;
 
-  /* Authentic Pantheon Typography Stack (gm2 / cm3) */
+  /* Google Cloud Typography Stack */
   --font-display: 'Google Sans', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'Roboto Mono', monospace;
@@ -93,9 +92,9 @@ pre {
 }
 
 /* ==========================================================================
-   Pantheon Shell Architecture: Top Bar + Left Section Nav + Central Page
+   Console Shell Architecture: Top Bar + Left Section Nav + Central Page
    ========================================================================== */
-.pantheon-shell {
+.console-shell {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -191,7 +190,7 @@ pre {
 }
 
 /* Body Layout: Left Section Nav + Main Workspace */
-.pantheon-body {
+.console-body {
   flex: 1;
   display: grid;
   grid-template-columns: 240px 1fr;
@@ -268,7 +267,7 @@ pre {
   min-width: 0;
 }
 
-/* Pantheon Action Bar (cfc-action-bar, 48px height) */
+/* Action Bar (cfc-action-bar, 48px height) */
 .cfc-action-bar {
   min-height: 48px;
   background-color: var(--surface-pure);
@@ -463,7 +462,7 @@ pre {
 }
 
 /* ==========================================================================
-   Buttons & Inputs (Pantheon Outlined Fields & Single-Line Tactile Buttons)
+   Buttons & Inputs (Google Cloud Outlined Fields & Single-Line Tactile Buttons)
    ========================================================================== */
 .btn {
   font-family: var(--font-sans);
@@ -668,7 +667,7 @@ pre {
   display: none;
 }
 
-/* Pantheon Empty State (cfc-empty-state) */
+/* Empty State (cfc-empty-state) */
 .cfc-empty-state {
   padding: 44px var(--space-6);
   text-align: center;
@@ -1099,7 +1098,7 @@ pre {
 }
 
 @media (max-width: 960px) {
-  .pantheon-body,
+  .console-body,
   .split-create,
   .split-two,
   .kpi-strip,

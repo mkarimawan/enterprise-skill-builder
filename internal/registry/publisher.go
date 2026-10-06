@@ -47,7 +47,7 @@ func BuildZipBundle(session *models.SkillSession) ([]byte, string, error) {
 
 // Publish registers the verified skill bundle into the selected enterprise target(s):
 // 1. Agent Platform Skill Registry (cloudapiregistry.googleapis.com / gcloud alpha agent-registry skills create)
-// 2. Gemini Enterprise App (discoveryengine.googleapis.com AgentService.UploadAgentFile + Spark/Sobi mount)
+// 2. Gemini Enterprise App (discoveryengine.googleapis.com AgentService.UploadAgentFile)
 // 3. Portable ZIP + SkillsBench Harbor Bundle Export
 func Publish(session *models.SkillSession, req models.PublishRequest, userEmail string) ([]models.PublishResult, error) {
 	zipBytes, digest, err := BuildZipBundle(session)
@@ -69,7 +69,7 @@ func Publish(session *models.SkillSession, req models.PublishRequest, userEmail 
 	}
 	appID := req.DiscoveryEngineApp
 	if appID == "" {
-		appID = "gemini-enterprise-spark-app"
+		appID = "gemini-enterprise-app"
 	}
 	version := req.VersionTag
 	if version == "" {
@@ -120,7 +120,7 @@ func Publish(session *models.SkillSession, req models.PublishRequest, userEmail 
 			ID:           fmt.Sprintf("pub-ge-%d", now.UnixNano()+1),
 			Target:       "Gemini Enterprise App",
 			Status:       "ATTACHED",
-			ResourceURI:  fmt.Sprintf("projects/%s/locations/%s/collections/default_collection/engines/%s/agents/default_sobi_agent/skills/%s", projectID, location, appID, skillSlug),
+			ResourceURI:  fmt.Sprintf("projects/%s/locations/%s/collections/default_collection/engines/%s/agents/default_assistant/skills/%s", projectID, location, appID, skillSlug),
 			CLICommand:   fmt.Sprintf("curl -X POST https://discoveryengine.googleapis.com/v1alpha/projects/%s/locations/%s/collections/default_collection/engines/%s/agents/default_assistant:uploadAgentFile -F 'file=@%s.zip'", projectID, location, appID, skillSlug),
 			BundleSizeKB: sizeKB,
 			SHA256Digest: digest,
@@ -135,7 +135,7 @@ func Publish(session *models.SkillSession, req models.PublishRequest, userEmail 
 			Target:       "Skill Archive (.zip)",
 			Status:       "READY_FOR_DOWNLOAD",
 			ResourceURI:  fmt.Sprintf("/api/sessions/%s/download", session.ID),
-			CLICommand:   fmt.Sprintf("harbor jobs start -p ./harbor_task -a agy -m google/gemini-3.6-flash"),
+			CLICommand:   fmt.Sprintf("harbor jobs start -p ./harbor_task -a agy -m google/gemini-3.8-flash"),
 			BundleSizeKB: sizeKB,
 			SHA256Digest: digest,
 			PublishedAt:  now,

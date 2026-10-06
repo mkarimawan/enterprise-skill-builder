@@ -31,7 +31,7 @@ func main() {
 	}
 	liveModel := os.Getenv("GEMINI_LIVE_MODEL")
 	if liveModel == "" {
-		liveModel = "gemini-3.6-flash"
+		liveModel = "gemini-3.8-flash"
 	}
 	sandboxWorkerURL := os.Getenv("SANDBOX_WORKER_URL")
 

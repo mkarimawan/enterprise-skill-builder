@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Create isolated Python 3.11 virtual environment mirroring Gemini Enterprise ge_skills_image
+# Create isolated Python 3.11 virtual environment matching the Gemini Enterprise runtime
 RUN python3 -m venv /opt/ge-skills-venv
 COPY runtime/ge_frozen_requirements.txt /tmp/ge_frozen_requirements.txt
 RUN /opt/ge-skills-venv/bin/pip install --no-cache-dir -r /tmp/ge_frozen_requirements.txt \

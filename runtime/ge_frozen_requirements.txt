@@ -1,5 +1,5 @@
 # Frozen Python 3.11 Runtime Baseline for Gemini Enterprise (GE) Skills
-# Parity with cloud/ml/discoveryengine/vertex_achev/agents/DynamicTool/ge_skills_image
+# Standard pre-installed packages available in the isolated Gemini Enterprise Python 3.11 sandbox.
 # Any additional pure-Python libraries required by a skill MUST be vendored into scripts/lib/
 
 absl-py==2.1.0

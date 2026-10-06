@@ -33,7 +33,7 @@ type SkillBlueprint struct {
 	Name              string       `json:"name"`
 	DisplayName       string       `json:"displayName"`
 	Summary           string       `json:"summary"`
-	TargetPlatforms   []string     `json:"targetPlatforms"` // ["Gemini Enterprise Spark (Sobi/Obi)", "Gemini Enterprise Web (Dolphin)", "Antigravity 2.0 / ADK"]
+	TargetPlatforms   []string     `json:"targetPlatforms"` // ["Gemini Enterprise", "Antigravity 2.0 / ADK"]
 	RuntimeProfile    string       `json:"runtimeProfile"`  // "GE Python 3.11 Frozen + Vendored scripts/lib/"
 	UseWhenTriggers   []string     `json:"useWhenTriggers"`
 	DoNotUseTriggers  []string     `json:"doNotUseTriggers"`
@@ -110,7 +110,7 @@ type SecurityCheck struct {
 type HarborEvalReport struct {
 	SuiteID            string              `json:"suiteId"`
 	BenchmarkFramework string              `json:"benchmarkFramework"` // "SkillsBench + Harbor v1.0"
-	ModelEvaluated     string              `json:"modelEvaluated"`     // "gemini-3.6-flash"
+	ModelEvaluated     string              `json:"modelEvaluated"`     // "gemini-3.8-flash"
 	OraclePassed       bool                `json:"oraclePassed"`
 	BaselinePassRate   float64             `json:"baselinePassRate"`
 	WithSkillPassRate  float64             `json:"withSkillPassRate"`

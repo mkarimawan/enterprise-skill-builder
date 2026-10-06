@@ -1,4 +1,4 @@
-# Enterprise Skill Builder for Gemini Enterprise (Spark / Sobi / Dolphin) & Antigravity 2.0
+# Enterprise Skill Builder for Gemini Enterprise & Antigravity 2.0
 
 An open-source, customer-deployable web application and Cloud Run Gen2 gVisor sandbox factory that enables Customer Engineers (CEs), Solutions Architects, and business users to interview by voice or text, ground enterprise schemas, compile and self-heal deterministic Python 3.11 skills via the headless **Antigravity CLI (`agy`)**, evaluate lift via **SkillsBench + Harbor**, and register skills directly into the **Google Cloud Agent Platform Skill Registry** and **Gemini Enterprise**.
 

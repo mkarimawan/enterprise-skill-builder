@@ -12,6 +12,7 @@ import (
 	"github.com/googlecloudplatform/enterprise-skill-builder/internal/auth"
 	"github.com/googlecloudplatform/enterprise-skill-builder/internal/eval"
 	"github.com/googlecloudplatform/enterprise-skill-builder/internal/grounding"
+	"github.com/googlecloudplatform/enterprise-skill-builder/internal/importer"
 	"github.com/googlecloudplatform/enterprise-skill-builder/internal/interview"
 	"github.com/googlecloudplatform/enterprise-skill-builder/internal/models"
 	"github.com/googlecloudplatform/enterprise-skill-builder/internal/registry"
@@ -143,6 +144,23 @@ func main() {
 				"session": sess,
 			})
 
+		case action == "import-url" && r.Method == http.MethodPost:
+			var req importer.ImportRequest
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request payload"})
+				return
+			}
+			report, bp, err := importer.ImportAndAdapt(r.Context(), sess, req)
+			if err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]any{
+				"importReport": report,
+				"blueprint":    bp,
+				"session":      sess,
+			})
+
 		case action == "interview" && r.Method == http.MethodPost:
 			var req struct {
 				Message  string `json:"message"`
@@ -164,13 +182,9 @@ func main() {
 			})
 
 		case action == "grounding" && r.Method == http.MethodPost:
-			var req struct {
-				Name       string `json:"name"`
-				SourceType string `json:"sourceType"`
-				RawSchema  string `json:"rawSchema"`
-			}
+			var req grounding.GroundingInput
 			_ = json.NewDecoder(r.Body).Decode(&req)
-			asset := grounding.SynthesizeAsset(req.Name, req.SourceType, req.RawSchema)
+			asset := grounding.SynthesizeConfiguredAsset(r.Context(), req)
 			sess.GroundingAssets = append(sess.GroundingAssets, asset)
 			if sess.Blueprint.ReadinessScore < 95 {
 				sess.Blueprint.ReadinessScore = 95

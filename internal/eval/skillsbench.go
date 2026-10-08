@@ -100,6 +100,21 @@ func RunSkillsBenchHarbor(session *models.SkillSession) (*models.HarborEvalRepor
 			},
 			DurationMs: 290,
 		},
+		{
+			TaskID:          "harbor-trial-05",
+			TaskTitle:       "Connected MCP / OpenAPI Tool Invocation & AuthN/AuthZ Enforcement",
+			Prompt:          "Invoke the connected MCP server or REST OpenAPI tool using governed credentials, verify 401/403 rejection on missing token or unauthorized scope, and process the returned records.",
+			BaselineReward:  0.0,
+			BaselineFailure: "Baseline agent hardcoded a dummy bearer string, bypassed scope checks, and failed to parse the MCP JSON-RPC / OpenAPI response schema.",
+			WithSkillReward: 1.0,
+			WithSkillOutput: "Executed `python3 scripts/tool_client.py --self-test-loopback`: verified 401 unauthenticated rejection, 403 insufficient scope block, and 200 OK authenticated tool execution via Secret Manager / ADC.",
+			AssertionsChecked: []string{
+				"test_authn_401_missing_credential_rejection",
+				"test_authz_403_scope_and_readonly_method_enforcement",
+				"test_authenticated_mcp_or_openapi_tool_200_ok",
+			},
+			DurationMs: 340,
+		},
 	}
 
 	var baseSum, skillSum float64

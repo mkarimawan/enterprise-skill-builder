@@ -6,6 +6,7 @@
     activeStage: 'interview',
     selectedBundleFile: 'SKILL.md',
     selectedHarborFile: 'harbor_task/task.toml',
+    selectedGroundingPreview: 'tools',
     isRecordingVoice: false,
     recognition: null,
   };
@@ -34,6 +35,10 @@
   const voiceWaveformBar = document.getElementById('voiceWaveformBar');
   const voiceStatusText = document.getElementById('voiceStatusText');
 
+  const importSkillUrlInput = document.getElementById('importSkillUrlInput');
+  const importProviderSelect = document.getElementById('importProviderSelect');
+  const importSkillUrlBtn = document.getElementById('importSkillUrlBtn');
+
   const skillNameInput = document.getElementById('skillNameInput');
   const editSkillNamePencilBtn = document.getElementById('editSkillNamePencilBtn');
   const saveNameFeedback = document.getElementById('saveNameFeedback');
@@ -43,6 +48,8 @@
 
   const groundingForm = document.getElementById('groundingForm');
   const groundingAssetsList = document.getElementById('groundingAssetsList');
+  const groundingPreviewTabs = document.getElementById('groundingPreviewTabs');
+  const groundingToolsInspector = document.getElementById('groundingToolsInspector');
   const fixturePreviewCode = document.getElementById('fixturePreviewCode');
 
   const sandboxGateNotice = document.getElementById('sandboxGateNotice');
@@ -233,7 +240,7 @@
             </svg>
           </div>
           <div class="empty-state-title">Skill summary will appear here</div>
-          <p class="empty-state-desc">Give your skill a name above and describe what you want it to do on the left, or click one of the sample prompts below the text box.</p>
+          <p class="empty-state-desc">Give your skill a name above and describe what you want it to do on the left, click a sample prompt, or paste a URL to import an existing Anthropic Claude or OpenAI skill.</p>
         </div>
       `;
       return;
@@ -249,7 +256,39 @@
       .join('');
     const guardrails = (bp.guardrailsGotchas || []).map((g) => `<li>${escapeHtml(g)}</li>`).join('');
 
+    let adaptationHtml = '';
+    const imp = sess.importReport;
+    if (imp && imp.adaptations && imp.adaptations.length > 0) {
+      const adaptRows = imp.adaptations
+        .map(
+          (item) => `
+          <div class="adaptation-diff-row">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <strong>${escapeHtml(item.category)}</strong>
+              <span class="status-badge status-pass">Adapted</span>
+            </div>
+            <div class="ledger-row-sub">Source: <code>${escapeHtml(item.original)}</code></div>
+            <div class="ledger-row-sub" style="color: var(--status-pass-ink);">Adapted to: <code>${escapeHtml(item.adaptedTo)}</code></div>
+            ${item.explanation ? `<div class="ledger-row-sub">${escapeHtml(item.explanation)}</div>` : ''}
+          </div>
+        `
+        )
+        .join('');
+
+      adaptationHtml = `
+        <div class="adaptation-banner">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+            <span class="ledger-row-title">Adapted from ${escapeHtml(imp.sourceProvider)} to Gemini, GE &amp; Antigravity</span>
+            <span class="status-badge status-pass"><code>${escapeHtml(imp.originalModel)}</code> to <code>${escapeHtml(imp.targetGeminiModel)}</code></span>
+          </div>
+          <div class="ledger-row-sub">Source URL: <code>${escapeHtml(imp.sourceUrl)}</code></div>
+          ${adaptRows}
+        </div>
+      `;
+    }
+
     blueprintCanvasContent.innerHTML = `
+      ${adaptationHtml}
       <div class="ledger-section">
         <div class="ledger-label">What this skill does</div>
         <div style="font-weight: 500; font-size: 14px;">${escapeHtml(bp.displayName || bp.name)} <span class="ledger-row-sub">(<code>${escapeHtml(bp.name)}</code>)</span></div>
@@ -278,32 +317,99 @@
     if (!sess) return;
     const assets = sess.groundingAssets || [];
 
+    if (groundingPreviewTabs) {
+      groundingPreviewTabs.querySelectorAll('.file-tab').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.gpreview === state.selectedGroundingPreview);
+      });
+    }
+
     if (assets.length === 0) {
       groundingAssetsList.innerHTML = `
         <div class="cfc-empty-state" style="padding: 28px 16px;">
-          <div class="empty-state-title">No business data attached yet</div>
-          <p class="empty-state-desc">Click "Attach sample data" next to any business system above, or continue directly to the sandbox test.</p>
+          <div class="empty-state-title">No business data or tool endpoints connected yet</div>
+          <p class="empty-state-desc">Click "Attach sample" next to any system above, or connect your own MCP server or REST API with AuthN/AuthZ below.</p>
         </div>
       `;
-      fixturePreviewCode.textContent = '// Select a business data source on the left to preview safe sample records for testing.';
+      groundingToolsInspector.innerHTML = `
+        <div class="cfc-empty-state">
+          <div class="empty-state-title">No MCP or OpenAPI tools discovered yet</div>
+          <p class="empty-state-desc">Connect an MCP server, REST API, or business dataset on the left to inspect discovered tool schemas, AuthN/AuthZ policies, and OpenAPI 3.0 specifications.</p>
+        </div>
+      `;
+      groundingToolsInspector.classList.remove('hidden-field');
+      fixturePreviewCode.classList.add('hidden-field');
       return;
     }
 
     groundingAssetsList.innerHTML = assets
-      .map(
-        (a) => `
+      .map((a) => {
+        const authInfo = a.authConfig
+          ? `AuthN: ${a.authConfig.authnType} | AuthZ: ${a.authConfig.readOnlyEnforced ? 'Read-Only Guardrail' : 'Standard'}`
+          : 'Synthetic Fixture';
+        return `
         <div class="ledger-row">
           <div class="ledger-row-header">
             <span class="ledger-row-title"><code>${escapeHtml(a.name)}</code></span>
-            <span class="status-badge status-pass">Attached (${escapeHtml(a.sourceType)})</span>
+            <span class="status-badge status-pass">${escapeHtml(a.sourceType.toUpperCase())} (${escapeHtml(a.discoveryMode || 'connected')})</span>
           </div>
+          ${a.endpointUrl ? `<div class="ledger-row-sub">Endpoint: <code>${escapeHtml(a.endpointUrl)}</code></div>` : ''}
           <div class="ledger-row-sub">${escapeHtml(a.summary)}</div>
+          <div class="ledger-row-sub"><strong>Security:</strong> ${escapeHtml(authInfo)}</div>
         </div>
-      `
-      )
+      `;
+      })
       .join('');
 
-    fixturePreviewCode.textContent = assets[assets.length - 1].mockFixtureJson || '{}';
+    const latest = assets[assets.length - 1];
+
+    if (state.selectedGroundingPreview === 'tools') {
+      groundingToolsInspector.classList.remove('hidden-field');
+      fixturePreviewCode.classList.add('hidden-field');
+
+      const tools = latest.discoveredTools || [];
+      const auth = latest.authConfig || {};
+      const scopes = (auth.requiredScopes || []).join(', ') || 'None specified';
+
+      const toolsHtml = tools
+        .map(
+          (t) => `
+          <div class="ledger-row">
+            <div class="ledger-row-header">
+              <span class="ledger-row-title"><code>${escapeHtml(t.name)}</code></span>
+              <span class="status-badge status-neutral">${escapeHtml(t.method || 'POST')} <code>${escapeHtml(t.pathOrAction || '/')}</code></span>
+            </div>
+            <div class="ledger-row-sub">${escapeHtml(t.description)}</div>
+            ${t.requiredArgs && t.requiredArgs.length ? `<div class="ledger-row-sub">Required args: <code>${escapeHtml(t.requiredArgs.join(', '))}</code></div>` : ''}
+          </div>
+        `
+        )
+        .join('');
+
+      groundingToolsInspector.innerHTML = `
+        <div class="ledger-section">
+          <div class="ledger-label">Authentication (AuthN) &amp; Authorization (AuthZ) contract</div>
+          <ul class="ledger-items">
+            <li><strong>AuthN Mechanism:</strong> <code>${escapeHtml(auth.authnType || 'service_account_adc')}</code> (${escapeHtml(auth.headerName || 'Authorization')})</li>
+            <li><strong>Secret Manager Credential URI:</strong> <code>${escapeHtml(auth.secretManagerUri || 'projects/finops-prod/secrets/mcp-tool-credential/versions/latest')}</code></li>
+            <li><strong>Required AuthZ Scopes:</strong> <code>${escapeHtml(scopes)}</code></li>
+            <li><strong>Read-Only Guardrail:</strong> ${auth.readOnlyEnforced !== false ? 'Enabled (blocks DELETE / PUT / DROP in sandbox and runtime)' : 'Disabled'}</li>
+          </ul>
+        </div>
+        <div class="panel-header" style="border-top: 1px solid var(--border-subtle);">
+          <h3 class="panel-title">Discovered callable tools (${tools.length})</h3>
+          <span class="status-badge status-pass">${escapeHtml(latest.discoveryMode || 'discovered')}</span>
+        </div>
+        <div>${toolsHtml}</div>
+      `;
+    } else if (state.selectedGroundingPreview === 'spec') {
+      groundingToolsInspector.classList.add('hidden-field');
+      fixturePreviewCode.classList.remove('hidden-field');
+      fixturePreviewCode.textContent = latest.openApiSpecYaml || latest.rawSchemaSnippet || '# No OpenAPI 3.0 or MCP specification available';
+    } else {
+      groundingToolsInspector.classList.add('hidden-field');
+      fixturePreviewCode.classList.remove('hidden-field');
+      fixturePreviewCode.textContent = latest.mockFixtureJson || '{}';
+    }
   }
 
   function renderSandboxStage() {
@@ -515,18 +621,54 @@
     }
   }
 
-  async function attachDataSource(sourceType, name, rawSchema) {
+  async function attachDataSource(payload) {
     if (!state.currentSession) return;
     const res = await fetch(`/api/sessions/${state.currentSession.id}/grounding`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sourceType, name, rawSchema: rawSchema || '' }),
+      body: JSON.stringify(payload),
     });
     const data = await res.json();
     if (data.session) {
       const idx = state.sessions.findIndex((s) => s.id === data.session.id);
       if (idx !== -1) state.sessions[idx] = data.session;
       setCurrentSession(data.session);
+    }
+  }
+
+  async function importSkillFromUrl(url, providerHint) {
+    if (!state.currentSession) return;
+    const cleanUrl = (url || '').trim();
+    if (!cleanUrl) return;
+
+    if (importSkillUrlBtn) {
+      importSkillUrlBtn.disabled = true;
+      importSkillUrlBtn.textContent = 'Adapting...';
+    }
+    blueprintCanvasContent.innerHTML = renderSkeletonLoader(4);
+
+    try {
+      const res = await fetch(`/api/sessions/${state.currentSession.id}/import-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: cleanUrl,
+          providerHint: providerHint || (importProviderSelect ? importProviderSelect.value : 'auto'),
+        }),
+      });
+      const data = await res.json();
+      if (data.session) {
+        state.currentSession = data.session;
+        const idx = state.sessions.findIndex((s) => s.id === data.session.id);
+        if (idx !== -1) state.sessions[idx] = data.session;
+        renderSessionSelector(state.currentSession.id);
+        setCurrentSession(state.currentSession);
+      }
+    } finally {
+      if (importSkillUrlBtn) {
+        importSkillUrlBtn.disabled = false;
+        importSkillUrlBtn.textContent = 'Adapt to Gemini';
+      }
     }
   }
 
@@ -680,9 +822,39 @@
       }
     });
 
-    document.querySelectorAll('.sample-chip').forEach((chip) => {
+    document.querySelectorAll('[data-preset]').forEach((chip) => {
       chip.addEventListener('click', async () => {
         await sendInterviewTurn(chip.dataset.preset, 'text');
+      });
+    });
+
+    // Web URL Skill Importer (Anthropic Claude / OpenAI / GitHub -> Gemini, GE & Antigravity)
+    if (importSkillUrlBtn) {
+      importSkillUrlBtn.addEventListener('click', () => {
+        const url = importSkillUrlInput ? importSkillUrlInput.value : '';
+        const provider = importProviderSelect ? importProviderSelect.value : 'auto';
+        importSkillFromUrl(url, provider);
+      });
+    }
+
+    if (importSkillUrlInput) {
+      importSkillUrlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const url = importSkillUrlInput.value;
+          const provider = importProviderSelect ? importProviderSelect.value : 'auto';
+          importSkillFromUrl(url, provider);
+        }
+      });
+    }
+
+    document.querySelectorAll('[data-import-url]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const url = btn.dataset.importUrl;
+        const provider = btn.dataset.importProvider || 'auto';
+        if (importSkillUrlInput) importSkillUrlInput.value = url;
+        if (importProviderSelect) importProviderSelect.value = provider;
+        importSkillFromUrl(url, provider);
       });
     });
 
@@ -759,7 +931,15 @@
         const originalText = btn.textContent;
         btn.textContent = 'Attached';
         try {
-          await attachDataSource(btn.dataset.sourceType, btn.dataset.sourceName, '');
+          await attachDataSource({
+            sourceType: btn.dataset.sourceType,
+            name: btn.dataset.sourceName,
+            rawSchema: '',
+            authnType: 'service_account_adc',
+            secretManagerUri: 'projects/finops-prod/secrets/mcp-tool-credential/versions/latest',
+            requiredScopes: ['https://www.googleapis.com/auth/cloud-platform', 'mcp:tools:execute'],
+            readOnlyEnforced: true,
+          });
         } finally {
           setTimeout(() => {
             btn.disabled = false;
@@ -769,18 +949,88 @@
       });
     });
 
-    // Advanced custom data source form
+    const grdSourceTypeEl = document.getElementById('grdSourceType');
+    const grdTransportGroupEl = document.getElementById('grdTransportGroup');
+    if (grdSourceTypeEl && grdTransportGroupEl) {
+      grdSourceTypeEl.addEventListener('change', () => {
+        grdTransportGroupEl.classList.toggle('hidden-field', grdSourceTypeEl.value !== 'mcp');
+      });
+    }
+
+    const fillSampleRestDocBtn = document.getElementById('fillSampleRestDocBtn');
+    if (fillSampleRestDocBtn) {
+      fillSampleRestDocBtn.addEventListener('click', async () => {
+        document.getElementById('grdSourceType').value = 'openapi';
+        if (grdTransportGroupEl) grdTransportGroupEl.classList.add('hidden-field');
+        document.getElementById('grdName').value = 'erp-procurement-rest-api';
+        document.getElementById('grdEndpointUrl').value = 'https://erp-api.enterprise.internal/v1';
+        document.getElementById('grdAuthnType').value = 'oauth2_client_credentials';
+        document.getElementById('grdSecretUri').value = 'projects/finops-prod/secrets/erp-oauth-client-secret/versions/latest';
+        document.getElementById('grdScopes').value = 'erp:invoices:read, erp:po:match';
+        document.getElementById('grdReadOnlyEnforced').checked = true;
+        document.getElementById('grdSchema').value = [
+          '# Internal ERP Procurement REST API Documentation (No public /openapi.json)',
+          'GET /v1/purchase-orders?vendor_id=V-104&status=OPEN - List open purchase orders and line tolerances',
+          'POST /v1/invoices/three-way-match - Verify PO, Goods Receipt, and Invoice tolerance (2.0% unit price variance)',
+          'DELETE /v1/invoices/{invoice_id} - Cancel vendor invoice (Blocked by Read-Only AuthZ Guardrail)',
+        ].join('\n');
+
+        await attachDataSource({
+          sourceType: 'openapi',
+          name: 'erp-procurement-rest-api',
+          endpointUrl: 'https://erp-api.enterprise.internal/v1',
+          rawSchema: document.getElementById('grdSchema').value,
+          authnType: 'oauth2_client_credentials',
+          secretManagerUri: 'projects/finops-prod/secrets/erp-oauth-client-secret/versions/latest',
+          requiredScopes: ['erp:invoices:read', 'erp:po:match'],
+          readOnlyEnforced: true,
+        });
+        state.selectedGroundingPreview = 'spec';
+        renderGroundingStage();
+      });
+    }
+
+    // Connect custom MCP server, REST API, or dataset form
     groundingForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!state.currentSession) return;
       const sourceType = document.getElementById('grdSourceType').value;
-      const name = document.getElementById('grdName').value;
+      const name = document.getElementById('grdName').value.trim() || `${sourceType}-enterprise-connector`;
+      const endpointUrl = (document.getElementById('grdEndpointUrl') || {}).value || '';
+      const mcpTransport = (document.getElementById('grdMcpTransport') || {}).value || 'streamable_http';
+      const authnType = (document.getElementById('grdAuthnType') || {}).value || 'service_account_adc';
+      const secretManagerUri = (document.getElementById('grdSecretUri') || {}).value || '';
+      const scopesRaw = (document.getElementById('grdScopes') || {}).value || '';
+      const requiredScopes = scopesRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const readOnlyEnforced = Boolean((document.getElementById('grdReadOnlyEnforced') || {}).checked);
       const rawSchema = document.getElementById('grdSchema').value;
-      if (!name.trim()) return;
-      await attachDataSource(sourceType, name.trim(), rawSchema);
+
+      await attachDataSource({
+        sourceType,
+        name,
+        endpointUrl: endpointUrl.trim(),
+        mcpTransport,
+        rawSchema,
+        authnType,
+        secretManagerUri: secretManagerUri.trim(),
+        requiredScopes,
+        readOnlyEnforced,
+      });
       document.getElementById('grdName').value = '';
       document.getElementById('grdSchema').value = '';
     });
+
+    if (groundingPreviewTabs) {
+      groundingPreviewTabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('.file-tab');
+        if (!btn || !btn.dataset.gpreview) return;
+        state.selectedGroundingPreview = btn.dataset.gpreview;
+        renderGroundingStage();
+      });
+    }
 
     fileTabsBar.addEventListener('click', (e) => {
       const btn = e.target.closest('.file-tab');

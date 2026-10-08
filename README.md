@@ -22,11 +22,14 @@ This repository separates **One-Time Platform Deployment (Terraform)** from **Da
 2. **Self-Service Portal for Business Users & Skill Builders (Zero Terraform Needed per Skill)**:
    - Once Terraform outputs the `skill_builder_web_url`, any authorized business user, analyst, or engineer in `iap_allowed_members` simply opens that URL in their browser.
    - Inside the web portal, users can:
-     - Conduct a **Voice or Text Interview** (`gemini-3.8-flash`) with the live **Skill Blueprint Canvas**.
-     - Attach **Enterprise Grounding** schemas (BigQuery, OpenAPI, MCP) and synthesize deterministic mock fixtures.
-     - Click **Compile & Self-Heal in Cloud Run Sandbox** to run headless `agy` inside the frozen Python 3.11 Gemini Enterprise runtime.
-     - Run paired **SkillsBench + Harbor** evaluations (`Baseline No-Skill` vs. `With-Skill`) and inspect `/logs/verifier/reward.txt` and Normalized Gain ($g$).
-     - Click **Register & Mount Skill Now** in the UI to push the verified skill directly into the **Agent Platform Skill Registry**, mount it onto **Gemini Enterprise**, or **Download the `.zip` Bundle**.
+     - Conduct a **Voice or Text Interview** (`gemini-3.8-flash`) with the live **Skill Summary**, or **Import & Adapt an Existing Skill from a Web URL** (automatically converting skills built for Anthropic Claude or OpenAI GPT/Codex to `gemini-3.8-flash`, Gemini Enterprise, and Antigravity 2.0).
+     - Attach **Business Data, Bring-Your-Own MCP Servers, or REST APIs**:
+       - Connect custom **MCP servers** (`streamable_http`, `sse`, or `stdio`) with live JSON-RPC 2.0 `tools/list` discovery.
+       - Connect **REST APIs** with automatic `/openapi.json` discovery or **OpenAPI 3.0.3 YAML inference** directly from pasted API documentation, `curl` examples, or sample JSON payloads.
+       - Configure **Authentication (AuthN)** (`service_account_adc`, `oauth2_client_credentials`, `bearer_token`, `api_key` backed by Google Cloud Secret Manager) and **Authorization (AuthZ)** (required OAuth2/IAM scopes and read-only HTTP method guardrails).
+     - Click **Run sandbox test** to execute headless `agy` inside the frozen Python 3.11 Gemini Enterprise runtime, including live loopback verification of `scripts/tool_client.py` (`401 Unauthorized` on missing AuthN, `403 Forbidden` on missing AuthZ scope or blocked `DELETE`, and `200 OK` on authenticated tool invocation).
+     - Run paired **SkillsBench + Harbor** evaluations (`Baseline No-Skill` vs. `With-Skill`, including `harbor-trial-05` for MCP/OpenAPI tool invocation & AuthN/AuthZ enforcement) and inspect `/logs/verifier/reward.txt` and Normalized Gain ($g$).
+     - Publish the verified skill directly into the **Google Cloud Agent Registry**, attach it to a **Gemini Enterprise** app, or **Download the `.zip` archive**.
 
 ---
 
@@ -115,9 +118,10 @@ enterprise-skill-builder/
 ├── internal/
 │   ├── auth/iap.go                # Cloud Run Identity-Aware Proxy (IAP) JWT & header verifier
 │   ├── interview/engine.go        # Gemini 3.8 Flash Live Voice/Text Interview & Blueprint Canvas engine
-│   ├── grounding/grounder.go      # BigQuery / OpenAPI / MCP schema grounder & mock fixture generator
-│   ├── sandbox/agy_harness.go     # Headless Antigravity CLI (agy) runner, self-healer, & AST/Bandit scanner
-│   ├── eval/skillsbench.go        # SkillsBench + Harbor task generator & paired evaluation runner
+│   ├── importer/adapter.go        # Web URL Skill Importer & Adapter (Anthropic/OpenAI -> Gemini, GE & Antigravity)
+│   ├── grounding/grounder.go      # BYO-MCP JSON-RPC discovery, OpenAPI 3.0 doc inference, AuthN/AuthZ & fixtures
+│   ├── sandbox/agy_harness.go     # Headless Antigravity CLI (agy) runner, tool loopback verifier & AST/Bandit scanner
+│   ├── eval/skillsbench.go        # SkillsBench + Harbor task generator & paired 5-trial evaluation runner
 │   ├── registry/publisher.go      # Agent Platform Skill Registry & DiscoveryEngine publisher + ZIP packager
 │   ├── models/types.go            # Domain models
 │   └── store/store.go             # Session store with pre-seeded enterprise FinOps showcase

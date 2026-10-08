@@ -11,12 +11,33 @@ type SkillSession struct {
 	Stage           string               `json:"stage"` // "interview", "grounding", "sandbox", "eval", "publish"
 	Messages        []ChatMessage        `json:"messages"`
 	Blueprint       SkillBlueprint       `json:"blueprint"`
+	ImportReport    *SkillImportReport   `json:"importReport,omitempty"`
 	GroundingAssets []GroundingAsset     `json:"groundingAssets"`
 	GeneratedFiles  map[string]string    `json:"generatedFiles"`
 	AgyEvents       []AgyStreamEvent     `json:"agyEvents"`
 	SecurityReport  *SecurityAuditReport `json:"securityReport,omitempty"`
 	HarborReport    *HarborEvalReport    `json:"harborReport,omitempty"`
 	PublishHistory  []PublishResult      `json:"publishHistory"`
+}
+
+// SkillImportReport captures how an external skill (Anthropic, OpenAI, or GitHub URL) was adapted for Gemini, GE, and Antigravity.
+type SkillImportReport struct {
+	SourceURL          string           `json:"sourceUrl"`
+	SourceProvider     string           `json:"sourceProvider"`     // "Anthropic Claude", "OpenAI / Codex", "GitHub / Web Markdown"
+	OriginalModel      string           `json:"originalModel"`      // e.g. "claude-3-5-sonnet-20241022", "gpt-4o"
+	TargetGeminiModel  string           `json:"targetGeminiModel"`  // "gemini-3.8-flash"
+	TargetPlatforms    []string         `json:"targetPlatforms"`    // ["Gemini Enterprise (GE)", "Antigravity 2.0", "Google Cloud Agent Registry"]
+	OriginalSnippet    string           `json:"originalSnippet"`
+	Adaptations        []AdaptationItem `json:"adaptations"`
+	ImportedAt         time.Time        `json:"importedAt"`
+}
+
+// AdaptationItem records a specific cross-platform conversion step applied to an imported skill.
+type AdaptationItem struct {
+	Category    string `json:"category"`    // "Model & SDK", "Routing & Frontmatter", "Sandbox Runtime", "Tool & AuthN/AuthZ"
+	Original    string `json:"original"`
+	AdaptedTo   string `json:"adaptedTo"`
+	Explanation string `json:"explanation"`
 }
 
 // ChatMessage represents a voice or text turn in the Interview Studio.
@@ -64,16 +85,43 @@ type ScriptSpec struct {
 	OutputContract string   `json:"outputContract"`
 }
 
-// GroundingAsset represents an uploaded spec, live GCP schema, or MCP server definition.
+// ToolAuthConfig defines Authentication (AuthN) and Authorization (AuthZ) for an MCP server or REST API.
+type ToolAuthConfig struct {
+	AuthNType        string   `json:"authnType"`        // "service_account_adc", "oauth2_client_credentials", "api_key", "bearer_token", "none"
+	HeaderName       string   `json:"headerName"`       // e.g. "Authorization" or "X-API-Key"
+	TokenURL         string   `json:"tokenUrl,omitempty"`
+	SecretManagerURI string   `json:"secretManagerUri"` // e.g. "projects/meridian-prod/secrets/mcp-token/versions/latest"
+	EnvVarName       string   `json:"envVarName"`       // e.g. "SKILL_TOOL_AUTH_TOKEN"
+	RequiredScopes   []string `json:"requiredScopes"`   // AuthZ scopes, e.g. ["finops.billing:read", "erp.invoices:read"]
+	AllowedMethods   []string `json:"allowedMethods"`   // AuthZ HTTP method allowlist, e.g. ["GET", "POST"]
+	ReadOnlyEnforced bool     `json:"readOnlyEnforced"` // Blocks DELETE / PUT / destructive mutations
+}
+
+// DiscoveredTool represents a callable tool discovered from an MCP server or inferred from an OpenAPI spec.
+type DiscoveredTool struct {
+	Name         string   `json:"name"`
+	Method       string   `json:"method"`       // "MCP tools/call" or HTTP verb ("GET", "POST")
+	PathOrAction string   `json:"pathOrAction"` // MCP tool name or REST path ("/v2/invoices/reconcile")
+	Description  string   `json:"description"`
+	RequiredArgs []string `json:"requiredArgs"`
+}
+
+// GroundingAsset represents an uploaded spec, live GCP schema, BYO-MCP server, or REST/OpenAPI toolset.
 type GroundingAsset struct {
-	ID               string    `json:"id"`
-	Name             string    `json:"name"`
-	SourceType       string    `json:"sourceType"` // "openapi", "bigquery", "mcp", "cloudrun", "runbook"
-	Summary          string    `json:"summary"`
-	RawSchemaSnippet string    `json:"rawSchemaSnippet"`
-	MockFixturePath  string    `json:"mockFixturePath"`
-	MockFixtureJSON  string    `json:"mockFixtureJson"`
-	AddedAt          time.Time `json:"addedAt"`
+	ID               string           `json:"id"`
+	Name             string           `json:"name"`
+	SourceType       string           `json:"sourceType"` // "openapi", "bigquery", "mcp", "runbook"
+	EndpointURL      string           `json:"endpointUrl,omitempty"`
+	MCPTransport     string           `json:"mcpTransport,omitempty"`  // "streamable_http", "sse", "stdio"
+	DiscoveryMode    string           `json:"discoveryMode,omitempty"` // "live_probed", "inferred_from_docs", "spec_uploaded", "preset"
+	OpenAPISpecYAML  string           `json:"openApiSpecYaml,omitempty"`
+	DiscoveredTools  []DiscoveredTool `json:"discoveredTools,omitempty"`
+	AuthConfig       ToolAuthConfig   `json:"authConfig"`
+	Summary          string           `json:"summary"`
+	RawSchemaSnippet string           `json:"rawSchemaSnippet"`
+	MockFixturePath  string           `json:"mockFixturePath"`
+	MockFixtureJSON  string           `json:"mockFixtureJson"`
+	AddedAt          time.Time        `json:"addedAt"`
 }
 
 // AgyStreamEvent mirrors the NDJSON stream emitted by headless `agy --output-format=stream-json`.

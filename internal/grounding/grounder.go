@@ -39,6 +39,12 @@ func SynthesizeAsset(name, sourceType, rawSchema string) models.GroundingAsset {
 	})
 }
 
+// PreviewDiscoveryOrInference runs live MCP JSON-RPC 2.0 tools/list discovery or OpenAPI 3.0.3
+// probe/doc-inference and returns the preview GroundingAsset without mutating session state.
+func PreviewDiscoveryOrInference(ctx context.Context, in GroundingInput) models.GroundingAsset {
+	return SynthesizeConfiguredAsset(ctx, in)
+}
+
 // SynthesizeConfiguredAsset connects a BYO-MCP server, discovers or infers an OpenAPI 3.0.3 spec for a REST API,
 // configures AuthN/AuthZ, and synthesizes a deterministic sandbox fixture.
 func SynthesizeConfiguredAsset(ctx context.Context, in GroundingInput) models.GroundingAsset {

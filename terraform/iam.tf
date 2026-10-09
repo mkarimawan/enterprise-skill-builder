@@ -12,6 +12,7 @@ locals {
     "firestore.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "serviceusage.googleapis.com",
+    "secretmanager.googleapis.com",
     "iam.googleapis.com",
   ]
 }
@@ -79,6 +80,19 @@ resource "google_project_iam_member" "sandbox_vertex_user" {
 resource "google_project_iam_member" "sandbox_service_usage_consumer" {
   project = var.project_id
   role    = "roles/serviceusage.serviceUsageConsumer"
+  member  = "serviceAccount:${google_service_account.sandbox_sa.email}"
+}
+
+# Grant Web App SA and Sandbox Worker SA Secret Manager Secret Accessor for BYO-MCP / REST API credentials
+resource "google_project_iam_member" "web_secret_accessor" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.web_sa.email}"
+}
+
+resource "google_project_iam_member" "sandbox_secret_accessor" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
   member  = "serviceAccount:${google_service_account.sandbox_sa.email}"
 }
 

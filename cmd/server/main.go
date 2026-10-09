@@ -181,6 +181,15 @@ func main() {
 				"session":   sess,
 			})
 
+		case action == "grounding" && len(parts) == 3 && parts[2] == "discover" && r.Method == http.MethodPost:
+			var req grounding.GroundingInput
+			_ = json.NewDecoder(r.Body).Decode(&req)
+			preview := grounding.PreviewDiscoveryOrInference(r.Context(), req)
+			writeJSON(w, http.StatusOK, map[string]any{
+				"preview": preview,
+				"session": sess,
+			})
+
 		case action == "grounding" && r.Method == http.MethodPost:
 			var req grounding.GroundingInput
 			_ = json.NewDecoder(r.Body).Decode(&req)

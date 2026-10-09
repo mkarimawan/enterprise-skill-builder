@@ -7,6 +7,7 @@
     selectedBundleFile: 'SKILL.md',
     selectedHarborFile: 'harbor_task/task.toml',
     selectedGroundingPreview: 'tools',
+    previewGroundingAsset: null,
     isRecordingVoice: false,
     recognition: null,
   };
@@ -330,37 +331,39 @@
           <p class="empty-state-desc">Click "Attach sample" next to any system above, or connect your own MCP server or REST API with AuthN/AuthZ below.</p>
         </div>
       `;
+    } else {
+      groundingAssetsList.innerHTML = assets
+        .map((a) => {
+          const authInfo = a.authConfig
+            ? `AuthN: ${a.authConfig.authnType} | AuthZ: ${a.authConfig.readOnlyEnforced ? 'Read-Only Guardrail' : 'Standard'}`
+            : 'Synthetic Fixture';
+          return `
+          <div class="ledger-row">
+            <div class="ledger-row-header">
+              <span class="ledger-row-title"><code>${escapeHtml(a.name)}</code></span>
+              <span class="status-badge status-pass">${escapeHtml(a.sourceType.toUpperCase())} (${escapeHtml(a.discoveryMode || 'connected')})</span>
+            </div>
+            ${a.endpointUrl ? `<div class="ledger-row-sub">Endpoint: <code>${escapeHtml(a.endpointUrl)}</code></div>` : ''}
+            <div class="ledger-row-sub">${escapeHtml(a.summary)}</div>
+            <div class="ledger-row-sub"><strong>Security:</strong> ${escapeHtml(authInfo)}</div>
+          </div>
+        `;
+        })
+        .join('');
+    }
+
+    const latest = state.previewGroundingAsset || (assets.length > 0 ? assets[assets.length - 1] : null);
+    if (!latest) {
       groundingToolsInspector.innerHTML = `
         <div class="cfc-empty-state">
           <div class="empty-state-title">No MCP or OpenAPI tools discovered yet</div>
-          <p class="empty-state-desc">Connect an MCP server, REST API, or business dataset on the left to inspect discovered tool schemas, AuthN/AuthZ policies, and OpenAPI 3.0 specifications.</p>
+          <p class="empty-state-desc">Connect an MCP server, REST API, or business dataset on the left (or click "Discover / infer tools") to inspect discovered tool schemas, AuthN/AuthZ policies, and OpenAPI 3.0 specifications.</p>
         </div>
       `;
       groundingToolsInspector.classList.remove('hidden-field');
       fixturePreviewCode.classList.add('hidden-field');
       return;
     }
-
-    groundingAssetsList.innerHTML = assets
-      .map((a) => {
-        const authInfo = a.authConfig
-          ? `AuthN: ${a.authConfig.authnType} | AuthZ: ${a.authConfig.readOnlyEnforced ? 'Read-Only Guardrail' : 'Standard'}`
-          : 'Synthetic Fixture';
-        return `
-        <div class="ledger-row">
-          <div class="ledger-row-header">
-            <span class="ledger-row-title"><code>${escapeHtml(a.name)}</code></span>
-            <span class="status-badge status-pass">${escapeHtml(a.sourceType.toUpperCase())} (${escapeHtml(a.discoveryMode || 'connected')})</span>
-          </div>
-          ${a.endpointUrl ? `<div class="ledger-row-sub">Endpoint: <code>${escapeHtml(a.endpointUrl)}</code></div>` : ''}
-          <div class="ledger-row-sub">${escapeHtml(a.summary)}</div>
-          <div class="ledger-row-sub"><strong>Security:</strong> ${escapeHtml(authInfo)}</div>
-        </div>
-      `;
-      })
-      .join('');
-
-    const latest = assets[assets.length - 1];
 
     if (state.selectedGroundingPreview === 'tools') {
       groundingToolsInspector.classList.remove('hidden-field');
@@ -630,6 +633,7 @@
     });
     const data = await res.json();
     if (data.session) {
+      state.previewGroundingAsset = null;
       const idx = state.sessions.findIndex((s) => s.id === data.session.id);
       if (idx !== -1) state.sessions[idx] = data.session;
       setCurrentSession(data.session);
@@ -954,6 +958,56 @@
     if (grdSourceTypeEl && grdTransportGroupEl) {
       grdSourceTypeEl.addEventListener('change', () => {
         grdTransportGroupEl.classList.toggle('hidden-field', grdSourceTypeEl.value !== 'mcp');
+      });
+    }
+
+    const previewDiscoverBtn = document.getElementById('previewDiscoverBtn');
+    if (previewDiscoverBtn) {
+      previewDiscoverBtn.addEventListener('click', async () => {
+        if (!state.currentSession) return;
+        const sourceType = document.getElementById('grdSourceType').value;
+        const name = document.getElementById('grdName').value.trim() || `${sourceType}-preview-connector`;
+        const endpointUrl = (document.getElementById('grdEndpointUrl') || {}).value || '';
+        const mcpTransport = (document.getElementById('grdMcpTransport') || {}).value || 'streamable_http';
+        const authnType = (document.getElementById('grdAuthnType') || {}).value || 'service_account_adc';
+        const secretManagerUri = (document.getElementById('grdSecretUri') || {}).value || '';
+        const scopesRaw = (document.getElementById('grdScopes') || {}).value || '';
+        const requiredScopes = scopesRaw
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const readOnlyEnforced = Boolean((document.getElementById('grdReadOnlyEnforced') || {}).checked);
+        const rawSchema = document.getElementById('grdSchema').value;
+
+        previewDiscoverBtn.disabled = true;
+        const origLabel = previewDiscoverBtn.textContent;
+        previewDiscoverBtn.textContent = 'Discovering / inferring...';
+        try {
+          const res = await fetch(`/api/sessions/${state.currentSession.id}/grounding/discover`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sourceType,
+              name,
+              endpointUrl: endpointUrl.trim(),
+              mcpTransport,
+              rawSchema,
+              authnType,
+              secretManagerUri: secretManagerUri.trim(),
+              requiredScopes,
+              readOnlyEnforced,
+            }),
+          });
+          const data = await res.json();
+          if (data.preview) {
+            state.previewGroundingAsset = data.preview;
+            state.selectedGroundingPreview = sourceType === 'openapi' ? 'spec' : 'tools';
+            renderGroundingStage();
+          }
+        } finally {
+          previewDiscoverBtn.disabled = false;
+          previewDiscoverBtn.textContent = origLabel;
+        }
       });
     }
 
